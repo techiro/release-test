@@ -1,0 +1,27 @@
+name: Manual Workflow Dispatch Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      choice:
+        type: choice
+        description: 'Choose a version to bump'
+        default: 'build: xxx'
+        options:
+          - 'build: xxx'
+          - 'patch: xxx'
+          - 'minor: xxx'
+          - 'major: xxx'
+      build_number:
+        type: string
+        required: false
+        description: '(Option) ビルドナンバーを指定したい場合のみ'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print inputs
+        run: |
+          echo "Selected version bump: ${{ github.event.inputs.choice }}"
+          echo "Build number: ${{ github.event.inputs.build_number }}"
