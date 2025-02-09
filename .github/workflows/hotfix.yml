@@ -46,6 +46,14 @@ jobs:
           branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
           git checkout -b $branch_name ${{ steps.get-latest-tag.outputs.tag }}
 
+
+      - name: Setup Dart
+        uses: ./.github/actions/setup-dart
+
+      - name: Install cider
+        shell: bash
+        run: dart pub global activate cider
+
       - name: pubspec のバージョンを更新する
         run: |
           cider bump patch --build=${{  steps.hotfix-build-number.outputs.build_number  }}
