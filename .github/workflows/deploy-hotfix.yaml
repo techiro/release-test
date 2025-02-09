@@ -1,0 +1,31 @@
+name: Hotfix Deployment Workflow
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: 'read'
+  issues: 'write' # PRのコメントに必要な権限
+  pull-requests: 'write' # PRのコメントに必要な権限
+
+jobs:
+  deploy-command:
+    if: |
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/hotfix')
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v2
+
+      - name: PR コメントに返信
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'ホットフィックスデプロイを開始しました。'
+            })

@@ -1,0 +1,61 @@
+name: Hotfix Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        type: string
+        required: false
+        description: 'ビルド番号を指定してください'
+
+jobs:
+  create-hotfix-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v3
+
+      - name: 最新のリリースタグを取得
+        id: get-latest-tag
+        run: |
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "Latest tag: $latest_tag"
+          echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+
+      - name: 最新タグのビルド番号を取得
+        id: get-build-number
+        run: |
+          latest_tag_build_number=$(echo ${{ steps.get-latest-tag.outputs.tag }} | sed -e 's/.*-//')
+          echo "Latest tag build number: $latest_tag_build_number"
+          echo "latest_tag_build_number=$latest_tag_build_number" >> $GITHUB_OUTPUT
+
+      - name: ビルド番号を作成
+        id: hotfix-build-number
+        run: |
+          build_number=${{ github.event.inputs.build_number }}
+          if [ -z "$build_number" ]; then
+            build_number=$((${{ steps.get-build-number.outputs.latest_tag_build_number }} + 100))
+            echo "Build number is not specified. Using latest tag build number."
+          fi
+          echo "Build number: $build_number"
+          echo "build_number=$build_number" >> $GITHUB_OUTPUT
+
+      - name: タグが既に存在するか確認
+        id: check_tag
+        run: |
+          if git tag --list | grep -q "${{ steps.get-latest-tag.outputs.tag }}"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+
+      - name: タグが存在する場合コメント
+        if: steps.check_tag.outputs.exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: ':warning: The tag ${{ steps.get-latest-tag.outputs.tag }} already exists. Please delete the tag and try again.'
+            })
