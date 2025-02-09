@@ -75,7 +75,6 @@ jobs:
 
       - name: コミットとプッシュ
         run: |
-
-          git add pubspec.yaml
+          git add .
           git commit -m "Bump version for hotfix"
           git push --set-upstream origin ${{ steps.create-hotfix.outputs.branch_name }}
