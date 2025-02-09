@@ -8,6 +8,9 @@ on:
         required: false
         description: 'ビルド番号を指定してください'
 
+permissions:
+  contents: write
+
 jobs:
   create-hotfix-branch:
     runs-on: ubuntu-latest
