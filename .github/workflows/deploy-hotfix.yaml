@@ -6,8 +6,8 @@ on:
 
 permissions:
   contents: 'read'
-  issues: 'write' # PR のコメントに必要となる permission
-  pull-requests: 'write' # PR のコメントに必要となる permission
+  issues: 'write' # PRのコメントに必要な権限
+  pull-requests: 'write' # PRのコメントに必要な権限
 
 jobs:
   deploy-command:
@@ -16,8 +16,16 @@ jobs:
       startsWith(github.event.comment.body, '/hotfix')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: リポジトリをチェックアウト
         uses: actions/checkout@v2
 
-      - name: Execute Hotfix Deployment
-        run: echo "Hotfix deployment initiated."
+      - name: PR コメントに返信
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'ホットフィックスデプロイを開始しました。'
+            })
