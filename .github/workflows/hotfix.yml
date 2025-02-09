@@ -46,12 +46,10 @@ jobs:
           branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
           git checkout -b $branch_name ${{ steps.get-latest-tag.outputs.tag }}
 
-
       - name: Setup Dart
         uses: ./.github/actions/setup-dart
 
       - name: Install cider
-        shell: bash
         run: dart pub global activate cider
 
       - name: pubspec のバージョンを更新する
@@ -64,10 +62,3 @@ jobs:
           git add pubspec.yaml
           git commit -m "Bump version for hotfix"
           git push --set-upstream origin ${{ steps.create-hotfix.outputs.branch_name }}
-
-      - name: Setup Dart
-        uses: ./.github/actions/setup-dart
-
-      - name: Install cider
-        run: dart pub global activate cider
-
