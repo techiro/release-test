@@ -43,7 +43,7 @@ jobs:
       - name: ホットフィックスブランチを作成
         id: create-hotfix
         run: |
-          branch_name="hotfix-${{ steps.hotfix-build-number.outputs.build_number }}"
+          branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
           git checkout -b $branch_name ${{ steps.get-latest-tag.outputs.tag }}
       - name: ホットフィックスブランチをプッシュ
         id: push-hotfix
