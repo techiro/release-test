@@ -10,8 +10,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Dart
-        uses: ./../.github/actions/setup-dart
+      - name: Use local action
+        uses: ./.github/actions/setup-dart
 
-      - name: Show Dart Version
+      - name: Check Dart Version
         run: dart --version
