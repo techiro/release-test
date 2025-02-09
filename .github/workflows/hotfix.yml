@@ -64,9 +64,15 @@ jobs:
         run: dart pub global activate cider
 
       - name: pubspec のバージョンを更新する
+        id: bump-version
         run: |
-          cider bump patch --build=${{  steps.hotfix-build-number.outputs.build_number  }}
+          cider bump patch --build=${{ steps.hotfix-build-number.outputs.build_number }}
+          pubspec_version=$(grep -oP '(?<=version: ).*' pubspec.yaml)
+          echo "Updated version: $pubspec_version"
+          echo "pubspec_version=$pubspec_version" >> $GITHUB_OUTPUT
+
           sed -i -e '/^version:/ s/+/-/g' pubspec.yaml
+
 
       - name: Configure Git user
         run: |
@@ -88,7 +94,7 @@ jobs:
             gh pr create \
               --draft \
               --base main \
-              --head ${{ steps.branch.outputs.branch_name }} \
+              --head ${{ steps.create-hotfix.outputs.branch_name }} \
               --label "A-build" \
-              --title "release: Hotfix ${{ steps.pubspec.outputs.number }}" \
+              --title "release: Hotfix ${{ steps.bump-version.outputs.pubspec_version}}" \
               --body "## :warning: デプロイ前は main を取り込まないように注意 :warning:"
