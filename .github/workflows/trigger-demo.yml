@@ -1,0 +1,13 @@
+name: Trigger Demo
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  print-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print event
+        run: |
+          echo "Triggered by event: ${{ github.event_name }}"

@@ -1,0 +1,14 @@
+name: Multi-Job Demo
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build step
+        run: echo "Building... (job = build)"
+  test:
+    needs: build        # 'build'ジョブが完了してから実行
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test step
+        run: echo "Testing... (job = test)"
