@@ -51,8 +51,11 @@ jobs:
           branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
           git checkout -b $branch_name ${{ steps.get-latest-tag.outputs.tag }}
 
-      # - name: Checkout
-      #   uses: actions/checkout@v3
+      - name: Checkout the new branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.create-hotfix.outputs.branch_name }}
+          fetch-depth: 0
 
       - name: Setup Dart
         uses: ./.github/actions/setup-dart
