@@ -63,16 +63,22 @@ jobs:
       - name: Install cider
         run: dart pub global activate cider
 
-      - name: pubspec のバージョンを更新する
-        id: bump-version
+      - name: バージョンをバンプする
         run: |
           cider bump patch --build=${{ steps.hotfix-build-number.outputs.build_number }}
+
+      - name: バージョン文字列の「+」を「-」に置換する
+        run: |
+          sed -i -e '/^version:/ s/+/-/g' pubspec.yaml
+
+      - name: pubspec.lock を更新する（依存関係解決）
+        run: dart pub get
+
+      - name: 更新後のバージョンを取得して出力する
+        run: |
           pubspec_version=$(grep -oP '(?<=version: ).*' pubspec.yaml)
           echo "Updated version: $pubspec_version"
           echo "pubspec_version=$pubspec_version" >> $GITHUB_OUTPUT
-
-          sed -i -e '/^version:/ s/+/-/g' pubspec.yaml
-
 
       - name: Configure Git user
         run: |
