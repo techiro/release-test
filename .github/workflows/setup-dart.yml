@@ -1,0 +1,17 @@
+name: Setup Dart Only Test
+
+on:
+  push:
+
+jobs:
+  test-setup-dart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Dart
+        uses: ./../.github/actions/setup-dart
+
+      - name: Show Dart Version
+        run: dart --version
