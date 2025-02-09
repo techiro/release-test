@@ -1,0 +1,72 @@
+name: Matrix outputs
+
+on:
+  pull_request:
+
+jobs:
+  create-env:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, prd]
+        device: [android, ios]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create env json
+        run: |
+          prefix=${{ matrix.device }}_${{ matrix.environment }}
+
+          cat << EOF > ./out.json
+          {
+            "${prefix}_device": "${{ matrix.device }}",
+            "${prefix}_environment": "${{ matrix.environment }}"
+          }
+          EOF
+
+      - name: Save result to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: env-${{ matrix.device }}-${{ matrix.environment }}
+          path: ./out.json
+          overwrite: true
+
+  get-results:
+    needs: create-env
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: ./env
+          pattern: env-*
+
+      - name: Get Results
+        id: result
+        run: |
+          path="./env/*"
+          for dir in $path; do
+            file=$dir/out.json
+            if [ -f "$file" ]; then
+              echo "Processing $file"
+
+              jq -c 'to_entries[]' "$file" | while read -r item; do
+                key=$(echo "$item" | jq -r '.key' | tr '[:lower:]' '[:upper:]')
+                value=$(echo "$item" | jq -r '.value')
+                echo "${key}=${value}" >> "$GITHUB_OUTPUT"
+              done
+            else
+              echo "File $file not found"
+            fi
+          done
+
+      - name: Show results
+        run: |
+          echo "${{ steps.result.outputs.IOS_DEV_ENVIRONMENT }}"
+          echo "${{ steps.result.outputs.IOS_DEV_DEVICE }}"
+          echo "${{ steps.result.outputs.ANDROID_PRD_ENVIRONMENT }}"
+          echo "${{ steps.result.outputs.ANDROID_PRD_DEVICE }}"
