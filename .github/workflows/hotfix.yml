@@ -34,17 +34,8 @@ jobs:
         run: |
           build_number=${{ github.event.inputs.build_number }}
           if [ -z "$build_number" ]; then
-            build_number=${{ steps.get-build-number.outputs.latest_tag_build_number }}
+            build_number=$((${{ steps.get-build-number.outputs.latest_tag_build_number }} + 100))
             echo "Build number is not specified. Use latest tag build number."
-            build_number=$((build_number + 100))
           fi
           echo "Build number: $build_number"
           echo "build_number=$build_number" >> $GITHUB_OUTPUT
-
-      - name: hotfixブランチの作成
-        run: |
-          # 一旦、すべての、latest_tag,latest_tag_build_number,build_numberを表示
-          echo "latest_tag: ${{ steps.get-latest-tag.outputs.tag }}"
-          echo "latest_tag_build_number: ${{ steps.get-build-number.outputs.latest_tag_build_number }}"
-          echo "build_number: ${{ steps.hotfix-build-number.outputs.build_number }}"
-

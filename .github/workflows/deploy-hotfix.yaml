@@ -1,0 +1,18 @@
+name: Hotfix Deployment Workflow
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  deploy-command:
+    if: |
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/hotfix')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Execute Hotfix Deployment
+        run: echo "Hotfix deployment initiated."
