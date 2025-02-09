@@ -72,9 +72,23 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          git add **/pubspec.yaml **/pubspec.lock
+          git status
 
       - name: コミットとプッシュ
         run: |
-          git add .
-          git commit -m "Bump version for hotfix"
+          git commit -m "Bump version for hotfix" || echo "No changes to commit"
           git push --set-upstream origin ${{ steps.create-hotfix.outputs.branch_name }}
+
+
+          - name: Create PR
+          env:
+            GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          run: |
+            gh pr create \
+              --draft \
+              --base main \
+              --head ${{ steps.branch.outputs.branch_name }} \
+              --label "A-build" \
+              --title "release: Hotfix ${{ steps.pubspec.outputs.number }}" \
+              --body "## :warning: デプロイ前は main を取り込まないように注意 :warning:"
