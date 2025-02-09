@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 全ての履歴・タグをフェッチ
 
       - name: 最新のリリースタグを取得
         id: get-latest-tag
