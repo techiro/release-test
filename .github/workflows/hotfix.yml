@@ -45,10 +45,17 @@ jobs:
         run: |
           branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
           git checkout -b $branch_name ${{ steps.get-latest-tag.outputs.tag }}
-      - name: ホットフィックスブランチをプッシュ
-        id: push-hotfix
+
+      - name: pubspec のバージョンを更新する
         run: |
-          git push origin ${{ steps.create-hotfix.outputs.branch_name }}
+          cider bump patch --build=${{  steps.hotfix-build-number.outputs.build_number  }}
+          sed -i -e '/^version:/ s/+/-/g' pubspec.yaml
+
+      - name: コミットとプッシュ
+        run: |
+          git add pubspec.yaml
+          git commit -m "Bump version for hotfix"
+          git push --set-upstream origin ${{ steps.create-hotfix.outputs.branch_name }}
 
       - name: Setup Dart
         uses: ./.github/actions/setup-dart
@@ -56,8 +63,3 @@ jobs:
       - name: Install cider
         run: dart pub global activate cider
 
-      - name: pubspec のバージョンを更新する
-        shell: bash
-        run: |
-          cider bump patch --build=${{  steps.hotfix-build-number.outputs.build_number  }}
-          sed -i -e '/^version:/ s/+/-/g' pubspec.yaml
