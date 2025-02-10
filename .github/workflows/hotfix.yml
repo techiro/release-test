@@ -82,6 +82,7 @@ jobs:
         run: dart pub get
 
       - name: 更新後のバージョンを取得して出力する
+        id: bump-version
         run: |
           pubspec_version=$(grep -oP '(?<=version: ).*' pubspec.yaml)
           echo "Updated version: $pubspec_version"
@@ -99,15 +100,14 @@ jobs:
           git commit -m "Bump version for hotfix" || echo "No changes to commit"
           git push --set-upstream origin ${{ steps.create-hotfix.outputs.branch_name }}
 
-
-          - name: Create PR
-          env:
-            GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          run: |
-            gh pr create \
-              --draft \
-              --base main \
-              --head ${{ steps.create-hotfix.outputs.branch_name }} \
-              --label "A-build" \
-              --title "release: Hotfix ${{ steps.bump-version.outputs.pubspec_version}}" \
-              --body "## :warning: デプロイ前は main を取り込まないように注意 :warning:"
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        run: |
+          gh pr create \
+            --draft \
+            --base main \
+            --head ${{ steps.create-hotfix.outputs.branch_name }} \
+            --label "A-build" \
+            --title "release: Hotfix ${{ steps.bump-version.outputs.pubspec_version}}" \
+            --body "## main を取り込む前に、/hotfixを実行してください"
