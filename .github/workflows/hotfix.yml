@@ -49,6 +49,7 @@ jobs:
         id: create-hotfix
         run: |
           branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
+          echo "switch from ${{ steps.get-latest-tag.outputs.tag }} to $branch_name"
           git checkout -b "$branch_name" ${{ steps.get-latest-tag.outputs.tag }}
           # 新規ブランチをリモートにプッシュして、以降のcheckoutで利用できるようにする
           git push --set-upstream origin "$branch_name"
