@@ -50,6 +50,8 @@ jobs:
         run: |
           branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
           git checkout -b "$branch_name" ${{ steps.get-latest-tag.outputs.tag }}
+          # 新規ブランチをリモートにプッシュして、以降のcheckoutで利用できるようにする
+          git push --set-upstream origin "$branch_name"
           echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
 
       - name: Checkout the new branch
