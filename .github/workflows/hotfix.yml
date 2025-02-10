@@ -49,7 +49,8 @@ jobs:
         id: create-hotfix
         run: |
           branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
-          git checkout -b $branch_name ${{ steps.get-latest-tag.outputs.tag }}
+          git checkout -b "$branch_name" ${{ steps.get-latest-tag.outputs.tag }}
+          echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
 
       - name: Checkout the new branch
         uses: actions/checkout@v3
