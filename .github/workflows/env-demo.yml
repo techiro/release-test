@@ -1,0 +1,17 @@
+name: Environment Variables Demo
+on: push
+env:
+  GLOBAL_VAR: "Hello from workflow"        # ワークフロー全体の環境変数
+jobs:
+  env_demo:
+    runs-on: ubuntu-latest
+    env:
+      JOB_VAR: "Hello from job"            # ジョブレベルの環境変数
+    steps:
+      - name: Show env vars
+        env:
+          STEP_VAR: "Hello from step"     # ステップレベルの環境変数
+        run: |
+          echo "GLOBAL_VAR = $GLOBAL_VAR"
+          echo "JOB_VAR    = $JOB_VAR"
+          echo "STEP_VAR   = $STEP_VAR"

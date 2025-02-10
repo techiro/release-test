@@ -1,0 +1,113 @@
+name: Hotfix Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        type: string
+        required: false
+        description: 'ビルド番号を指定してください'
+
+permissions:
+  contents: write
+
+jobs:
+  create-hotfix-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 全ての履歴・タグをフェッチ
+          # Fine-grained PAT with contents:write and workflows:write
+          # scopes
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+
+      - name: 最新のリリースタグを取得
+        id: get-latest-tag
+        run: |
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "Latest tag: $latest_tag"
+          echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+
+      - name: 最新タグのビルド番号を取得
+        id: get-build-number
+        run: |
+          latest_tag_build_number=$(echo ${{ steps.get-latest-tag.outputs.tag }} | sed -e 's/.*-//')
+          echo "Latest tag build number: $latest_tag_build_number"
+          echo "latest_tag_build_number=$latest_tag_build_number" >> $GITHUB_OUTPUT
+
+      - name: ビルド番号を作成
+        id: hotfix-build-number
+        run: |
+          build_number=${{ github.event.inputs.build_number }}
+          if [ -z "$build_number" ]; then
+            build_number=$((${{ steps.get-build-number.outputs.latest_tag_build_number }} + 100))
+            echo "Build number is not specified. Using latest tag build number."
+          fi
+          echo "Build number: $build_number"
+          echo "build_number=$build_number" >> $GITHUB_OUTPUT
+
+      - name: ホットフィックスブランチを作成
+        id: create-hotfix
+        run: |
+          branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
+          echo "switch from ${{ steps.get-latest-tag.outputs.tag }} to $branch_name"
+          git checkout -b "$branch_name" ${{ steps.get-latest-tag.outputs.tag }}
+          # 新規ブランチをリモートにプッシュして、以降のcheckoutで利用できるようにする
+          git push --set-upstream origin "$branch_name"
+          echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+
+      - name: Checkout the new branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.create-hotfix.outputs.branch_name }}
+          fetch-depth: 0
+
+      - name: Setup Dart
+        uses: ./.github/actions/setup-dart
+
+      - name: Install cider
+        run: dart pub global activate cider
+
+      - name: バージョンをバンプする
+        run: |
+          cider bump patch --build=${{ steps.hotfix-build-number.outputs.build_number }}
+
+      - name: バージョン文字列の「+」を「-」に置換する
+        run: |
+          sed -i -e '/^version:/ s/+/-/g' pubspec.yaml
+
+      - name: pubspec.lock を更新する（依存関係解決）
+        run: dart pub get
+
+      - name: 更新後のバージョンを取得して出力する
+        id: bump-version
+        run: |
+          pubspec_version=$(grep -oP '(?<=version: ).*' pubspec.yaml)
+          echo "Updated version: $pubspec_version"
+          echo "pubspec_version=$pubspec_version" >> $GITHUB_OUTPUT
+
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git status
+
+      - name: コミットとプッシュ
+        run: |
+          git commit -m "Bump version for hotfix" || echo "No changes to commit"
+          git push --set-upstream origin ${{ steps.create-hotfix.outputs.branch_name }}
+
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        run: |
+          gh pr create \
+            --draft \
+            --base main \
+            --head ${{ steps.create-hotfix.outputs.branch_name }} \
+            --label "A-build" \
+            --title "release: Hotfix ${{ steps.bump-version.outputs.pubspec_version}}" \
+            --body "## main を取り込む前に、/hotfixを実行してください"

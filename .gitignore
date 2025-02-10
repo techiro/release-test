@@ -1,0 +1,6 @@
+# act
+.actrc
+
+# Dart
+.dart_tool/
+devtools_options.yaml
