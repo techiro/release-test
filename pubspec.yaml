@@ -1,9 +1,0 @@
-name: app
-description: release test
-
-publish_to: "none"
-
-version: 0.0.0-300
-
-environment:
-  sdk: 3.5.4
