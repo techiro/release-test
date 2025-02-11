@@ -84,14 +84,14 @@ jobs:
             })
 
       - name: タグが存在しない場合、新しいタグを作成
-        if: steps.check_tag.outputs.exists == 'false' && steps.get-latest-tag.outputs.tag != ''
+        if: steps.check_tag.outputs.exists == 'false'
         run: |
-          git tag "${{ steps.get-latest-tag.outputs.tag }}"
-          git push origin "${{ steps.get-latest-tag.outputs.tag }}"
+          git tag "${{ steps.pubspec.outputs.version }}"
+          git push origin "${{ steps.pubspec.outputs.version }}"
           echo "tag_created=true" >> $GITHUB_OUTPUT
 
       - name: PR コメントに返信
-        if: steps.check_tag.outputs.exists == 'false' && steps.get-latest-tag.outputs.tag != ''
+        if: steps.check_tag.outputs.exists == 'false'
         uses: actions/github-script@v7
         with:
           script: |
