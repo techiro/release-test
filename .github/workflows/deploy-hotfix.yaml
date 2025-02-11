@@ -51,6 +51,7 @@ jobs:
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: タグが存在する場合コメント
         if: steps.check_tag.outputs.exists == 'true'
