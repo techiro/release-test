@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 全ての履歴・タグをフェッチ
 
       - name: PR コメントに返信
         uses: actions/github-script@v7
@@ -36,11 +38,10 @@ jobs:
         uses: xt0rted/pull-request-comment-branch@e8b8daa837e8ea7331c0003c9c316a64c6d8b0b1 # v3.0.0
         id: find-ref
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           ref: ${{ steps.find-ref.outputs.head_ref }}
-          # タグを取得しながら checkout する
-          fetch-tags: true
+          fetch-depth: 0
 
       # pubspec.yaml から version を取得
       - name: Get version from pubspec.yaml
