@@ -5,9 +5,10 @@ on:
     types: [created, edited]
 
 permissions:
-  contents: 'read'
-  issues: 'write'
-  pull-requests: 'write'
+  contents: write # タグ生成のために必要
+  issues: write # PRのコメントに必要
+  pull-requests: write # PRのコメントに必要
+  checks: read # workflowの実行結果を取得するために必要
 
 jobs:
   deploy-command:
@@ -33,14 +34,9 @@ jobs:
       - name: 最新のリリースタグを取得
         id: get-latest-tag
         run: |
-          if [ $(git tag -l | wc -l) -eq 0 ]; then
-            echo "No tags found."
-            echo "tag=" >> $GITHUB_OUTPUT
-          else
-            latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+            latest_tag=$(git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`)
             echo "Latest tag: $latest_tag"
             echo "tag=$latest_tag" >> $GITHUB_OUTPUT
-          fi
 
       - name: タグが既に存在するか確認
         id: check_tag
