@@ -6,8 +6,8 @@ on:
 
 permissions:
   contents: 'read'
-  issues: 'write' # PRのコメントに必要な権限
-  pull-requests: 'write' # PRのコメントに必要な権限
+  issues: 'write'
+  pull-requests: 'write'
 
 jobs:
   deploy-command:
@@ -33,14 +33,21 @@ jobs:
       - name: 最新のリリースタグを取得
         id: get-latest-tag
         run: |
-          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "Latest tag: $latest_tag"
-          echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+          if [ $(git tag -l | wc -l) -eq 0 ]; then
+            echo "No tags found."
+            echo "tag=" >> $GITHUB_OUTPUT
+          else
+            latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+            echo "Latest tag: $latest_tag"
+            echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+          fi
 
       - name: タグが既に存在するか確認
         id: check_tag
         run: |
-          if git tag --list | grep -q "${{ steps.get-latest-tag.outputs.tag }}"; then
+          if [ -z "${{ steps.get-latest-tag.outputs.tag }}" ]; then
+            echo "exists=false" >> $GITHUB_OUTPUT
+          elif git tag --list | grep -q "${{ steps.get-latest-tag.outputs.tag }}"; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -58,14 +65,14 @@ jobs:
             })
 
       - name: タグが存在しない場合、新しいタグを作成
-        if: steps.check_tag.outputs.exists == 'false'
+        if: steps.check_tag.outputs.exists == 'false' && steps.get-latest-tag.outputs.tag != ''
         run: |
           git tag "${{ steps.get-latest-tag.outputs.tag }}"
           git push origin "${{ steps.get-latest-tag.outputs.tag }}"
           echo "tag_created=true" >> $GITHUB_OUTPUT
 
       - name: PR コメントに返信
-        if: steps.check_tag.outputs.exists == 'false'
+        if: steps.check_tag.outputs.exists == 'false' && steps.get-latest-tag.outputs.tag != ''
         uses: actions/github-script@v7
         with:
           script: |
@@ -75,4 +82,3 @@ jobs:
               repo: context.repo.repo,
               body: 'タグ ${{ steps.get-latest-tag.outputs.tag }} を作成しました。'
             })
-
