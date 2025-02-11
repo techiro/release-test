@@ -62,12 +62,14 @@ jobs:
       - name: タグが既に存在するか確認
         id: check_tag
         run: |
-          if [ -z "${{ steps.pubspec.outputs.version }}" ]; then
+          version="${{ steps.pubspec.outputs.version }}"
+          if [ -z "$version" ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
-          elif git tag --list | grep -q "${{ steps.pubspec.outputs.version }}"; then
+          elif git tag --list | grep -q "$version"; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: タグが存在する場合コメント
         if: steps.check_tag.outputs.exists == 'true'
