@@ -3,6 +3,7 @@ name: Hotfix Deployment Workflow
 on:
   issue_comment:
     types: [created, edited]
+    # releaseブランチか、hotfixブランチでのみ実行
 
 permissions:
   contents: write # タグ生成のために必要
@@ -19,8 +20,6 @@ jobs:
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: PR コメントに返信
         uses: actions/github-script@v7
@@ -33,23 +32,41 @@ jobs:
               body: 'ホットフィックスデプロイを開始しました。'
             })
 
+      - name: Find pull request ref with comment
+        uses: xt0rted/pull-request-comment-branch@e8b8daa837e8ea7331c0003c9c316a64c6d8b0b1 # v3.0.0
+        id: find-ref
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.find-ref.outputs.head_ref }}
+          # タグを取得しながら checkout する
+          fetch-tags: true
+
+      # pubspec.yaml から version を取得
+      - name: Get version from pubspec.yaml
+        id: pubspec
+        shell: bash
+        run: |
+          echo "version=$(grep 'version:' packages/app/pubspec.yaml | sed 's/version: //g' | tr -d ' ')" >> $GITHUB_OUTPUT
+
+
       - name: 最新のリリースタグを取得
         id: get-latest-tag
         run: |
-            latest_tag=$(git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`)
-            echo "Latest tag: $latest_tag"
-            echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+          # 最新のリリースタグを取得(タグがmainにない場合でも動作する)
+          latest_tag=$(git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`)
+          echo "Latest tag: $latest_tag"
+          echo "tag=$latest_tag" >> $GITHUB_OUTPUT
 
       - name: タグが既に存在するか確認
         id: check_tag
         run: |
-          if [ -z "${{ steps.get-latest-tag.outputs.tag }}" ]; then
+          if [ -z "${{ steps.pubspec.outputs.version }}" ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
-          elif git tag --list | grep -q "${{ steps.get-latest-tag.outputs.tag }}"; then
+          elif git tag --list | grep -q "${{ steps.pubspec.outputs.version }}"; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
-          fi
 
       - name: タグが存在する場合コメント
         if: steps.check_tag.outputs.exists == 'true'
