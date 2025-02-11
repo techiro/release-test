@@ -47,7 +47,7 @@ jobs:
         id: pubspec
         shell: bash
         run: |
-          echo "version=$(grep 'version:' packages/app/pubspec.yaml | sed 's/version: //g' | tr -d ' ')" >> $GITHUB_OUTPUT
+          echo "version=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | tr -d ' ')" >> $GITHUB_OUTPUT
 
 
       - name: 最新のリリースタグを取得
