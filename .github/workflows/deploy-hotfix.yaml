@@ -80,7 +80,9 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: ':warning: The tag ${{ steps.get-latest-tag.outputs.tag }} already exists. Please delete the tag and try again.'
+              body: |
+                > [!WARNING]
+                > タグ ${{ steps.pubspec.outputs.version }} は既に存在します。タグを削除して再試行してください。
             })
 
       - name: タグが存在しない場合、新しいタグを作成
