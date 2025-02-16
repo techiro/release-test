@@ -110,4 +110,4 @@ jobs:
             --head ${{ steps.create-hotfix.outputs.branch_name }} \
             --label "A-build" \
             --title "release: Hotfix ${{ steps.bump-version.outputs.pubspec_version}}" \
-            --body "## main を取り込む前に、/hotfixを実行してください"
+            --body-file "hotfix-pr-body.md"
