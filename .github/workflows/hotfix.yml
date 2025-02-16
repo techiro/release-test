@@ -120,4 +120,4 @@ jobs:
             --head ${{ steps.create-hotfix.outputs.branch_name }} \
             --label "A-build" \
             --title "release: Hotfix ${{ steps.bump-version.outputs.pubspec_version}}" \
-            --body-file ".github/hotfix-pr-body.md"
+            --body-file "./.github/hotfix-pr-body.md"
