@@ -18,9 +18,7 @@ jobs:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 全ての履歴・タグをフェッチ
-          # Fine-grained PAT with contents:write and workflows:write
-          # scopes
+          fetch-depth: 0
           token: ${{ secrets.WORKFLOW_TOKEN }}
 
       - name: 最新のリリースタグを取得
@@ -48,13 +46,26 @@ jobs:
           echo "Build number: $build_number"
           echo "build_number=$build_number" >> $GITHUB_OUTPUT
 
+      - name: 既存のPRがあればクローズする
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        run: |
+          branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
+          existing_pr=$(gh pr list --head "$branch_name" --state open --json number --jq '.[].number')
+          if [ -n "$existing_pr" ]; then
+            echo "既存のPRを検出: $existing_pr をクローズし、ブランチを削除します。"
+            gh pr close "$existing_pr" --delete-branch
+          else
+            echo "既存のPRはありません。"
+          fi
+
+
       - name: ホットフィックスブランチを作成
         id: create-hotfix
         run: |
           branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
           echo "switch from ${{ steps.get-latest-tag.outputs.tag }} to $branch_name"
           git checkout -b "$branch_name" ${{ steps.get-latest-tag.outputs.tag }}
-          # 新規ブランチをリモートにプッシュして、以降のcheckoutで利用できるようにする
           git push --set-upstream origin "$branch_name"
           echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
 
