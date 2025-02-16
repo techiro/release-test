@@ -15,6 +15,13 @@ jobs:
   create-hotfix-branch:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: actions/create-github-app-token@v1.11.2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
         with:
@@ -111,8 +118,6 @@ jobs:
           git push --set-upstream origin ${{ steps.create-hotfix.outputs.branch_name }}
 
       - name: Create PR
-        env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
         run: |
           gh pr create \
             --draft \
