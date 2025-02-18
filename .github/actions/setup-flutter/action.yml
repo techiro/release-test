@@ -1,0 +1,47 @@
+name: "Setup Flutter"
+description: "GitHub Actions 用の Flutter SDK セットアップアクションです。"
+
+inputs:
+  channel:
+    description: "インストールする Flutter チャネル（stable, beta, dev, master）"
+    required: false
+    default: "stable"
+  version:
+    description: "特定の Flutter バージョン（オプション）。未指定の場合は最新リリースを使用します。"
+    required: false
+    default: ""
+
+outputs:
+  flutter-path:
+    description: "Flutter SDK のインストールパス"
+    value: ${{ steps.flutter-path.outputs.flutter-path }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Flutter リポジトリをクローン
+      id: clone_flutter
+      shell: bash
+      run: |
+        git clone https://github.com/flutter/flutter.git --branch "${{ inputs.channel }}" --depth 1
+
+    - name: 指定バージョンのチェックアウト（オプション）
+      if: ${{ inputs.version != '' }}
+      shell: bash
+      run: |
+        cd flutter
+        git fetch --tags
+        git checkout "${{ inputs.version }}"
+
+    - name: Flutter を PATH に追加
+      shell: bash
+      run: |
+        echo "$(pwd)/flutter/bin" >> $GITHUB_PATH
+
+    - name: Flutter Doctor の実行
+      shell: bash
+      run: flutter doctor
+
+    - name: Flutter パスを出力
+      shell: bash
+      run: echo "flutter-path=$(pwd)/flutter" >> $GITHUB_OUTPUT
