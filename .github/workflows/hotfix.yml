@@ -111,6 +111,8 @@ jobs:
           git push --set-upstream origin ${{ steps.create-hotfix.outputs.branch_name }}
 
       - name: Create PR
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
         run: |
           gh pr create \
             --draft \
