@@ -74,9 +74,8 @@ jobs:
         if: steps.check_tag.outputs.exists == 'false'
         run: |
           echo "Creating tag test: ${{ steps.pubspec.outputs.version }}"
-          # TODO(techiro): このPRがマージされて、すべて動いたら、コメントアウトを外す
-          # git tag "${{ steps.pubspec.outputs.version }}"
-          # git push origin "${{ steps.pubspec.outputs.version }}"
+          git tag "${{ steps.pubspec.outputs.version }}"
+          git push origin "${{ steps.pubspec.outputs.version }}"
           echo "tag_created=true" >> "$GITHUB_OUTPUT"
 
       - name: Reply to PR comment
