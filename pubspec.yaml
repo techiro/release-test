@@ -3,7 +3,7 @@ description: release test
 
 publish_to: "none"
 
-version: 0.0.0-500
+version: 0.0.0-600
 
 environment:
   sdk: 3.5.4
