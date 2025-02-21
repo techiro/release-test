@@ -22,6 +22,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check checkout repository hash
+        run: |
+          echo "sha: ${{ github.sha }}"
+          echo "ref_name: ${{ github.ref_name}}"
+          echo "ref: ${{ github.ref }}"
+
       - name: Find pull request ref with comment
         uses: xt0rted/pull-request-comment-branch@e8b8daa837e8ea7331c0003c9c316a64c6d8b0b1 # v3.0.0
         id: find-ref
