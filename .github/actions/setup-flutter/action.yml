@@ -40,7 +40,9 @@ runs:
 
     - name: Flutter Doctor の実行
       shell: bash
-      run: flutter doctor
+      run: |
+        cd flutter
+        flutter doctor
 
     - name: Flutter パスを出力
       shell: bash
