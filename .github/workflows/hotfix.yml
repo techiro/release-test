@@ -15,18 +15,11 @@ jobs:
   create-hotfix-branch:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: actions/create-github-app-token@v1.11.2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ secrets.WORKFLOW_TOKEN }}
 
       - name: 最新のリリースタグを取得
         id: get-latest-tag
