@@ -1,0 +1,92 @@
+name: Create Tag
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  deploy-command:
+    if: |
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/tag')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Find pull request ref with comment
+        uses: xt0rted/pull-request-comment-branch@e8b8daa837e8ea7331c0003c9c316a64c6d8b0b1 # v3.0.0
+        id: find-ref
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ steps.find-ref.outputs.head_ref }}
+
+      - name: Set up Dart
+        uses: ./.github/actions/setup-dart
+
+      - name: Get version from pubspec.yaml
+        id: pubspec
+        shell: bash
+        run: |
+          dart pub global activate cider
+          echo "version=$(cider --project-root=./packages/app version)" >> "$GITHUB_OUTPUT"
+
+      - name: Get latest release tag
+        id: get-latest-tag
+        run: |
+          # Get the latest release tag (works even if the tag is not on main)
+          latest_tag=$(git describe --abbrev=0 --tags "$(git rev-list --tags --max-count=1)")
+          echo "tag=$latest_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          version="${{ steps.pubspec.outputs.version }}"
+          if git tag --list | grep -q "$version"
+          then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment if tag already exists
+        if: steps.check_tag.outputs.exists == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "> [!WARNING]\n> [Tag ${{ steps.pubspec.outputs.version }}](https://github.com/techiro/release-test/tags) already exists. Please delete the tag and try again."
+            })
+
+      - name: Create new tag if it does not exist
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          echo "Creating tag test: ${{ steps.pubspec.outputs.version }}"
+          # TODO(techiro): このPRがマージされて、すべて動いたら、コメントアウトを外す
+          # git tag "${{ steps.pubspec.outputs.version }}"
+          # git push origin "${{ steps.pubspec.outputs.version }}"
+          echo "tag_created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Reply to PR comment
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '> [!IMPORTANT]\n> [Tag ${{ steps.pubspec.outputs.version }}](https://github.com/techiro/release-test/tags) has been created.'
+            })
