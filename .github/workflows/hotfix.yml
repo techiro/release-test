@@ -19,7 +19,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: ${{ secrets.WORKFLOW_TOKEN }}
 
       - name: 最新のリリースタグを取得
         id: get-latest-tag
@@ -28,27 +27,9 @@ jobs:
           echo "Latest tag: $latest_tag"
           echo "tag=$latest_tag" >> $GITHUB_OUTPUT
 
-      - name: 最新タグのビルド番号を取得
-        id: get-build-number
-        run: |
-          latest_tag_build_number=$(echo ${{ steps.get-latest-tag.outputs.tag }} | sed -e 's/.*-//')
-          echo "Latest tag build number: $latest_tag_build_number"
-          echo "latest_tag_build_number=$latest_tag_build_number" >> $GITHUB_OUTPUT
-
-      - name: ビルド番号を作成
-        id: hotfix-build-number
-        run: |
-          build_number=${{ github.event.inputs.build_number }}
-          if [ -z "$build_number" ]; then
-            build_number=$((${{ steps.get-build-number.outputs.latest_tag_build_number }} + 100))
-            echo "Build number is not specified. Using latest tag build number."
-          fi
-          echo "Build number: $build_number"
-          echo "build_number=$build_number" >> $GITHUB_OUTPUT
-
       - name: 既存ブランチを削除
         run: |
-          branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
+          branch_name="hotfix-from-${{ steps.get-latest-tag.outputs.tag }}"
           # リモートにブランチが存在するかチェック
           existing_branch=$(git ls-remote --heads origin "$branch_name")
           if [ -n "$existing_branch" ]; then
@@ -58,11 +39,10 @@ jobs:
             echo "既存のブランチはありません。"
           fi
 
-
       - name: ホットフィックスブランチを作成
         id: create-hotfix
         run: |
-          branch_name="hotfix-${{ steps.get-latest-tag.outputs.tag }}"
+          branch_name="hotfix-from-${{ steps.get-latest-tag.outputs.tag }}"
           echo "switch from ${{ steps.get-latest-tag.outputs.tag }} to $branch_name"
           git checkout -b "$branch_name" ${{ steps.get-latest-tag.outputs.tag }}
           git push --set-upstream origin "$branch_name"
@@ -74,29 +54,31 @@ jobs:
           ref: ${{ steps.create-hotfix.outputs.branch_name }}
           fetch-depth: 0
 
-      - name: Setup Dart
+      - name: ホットフィックスのビルド番号を取得
+        id: hotfix-build-number
+        run: |
+          latest_tag_build_number=$(echo "${{ steps.get-latest-tag.outputs.tag }}" | sed -e 's/.*-//')
+          build_number="${{ github.event.inputs.build_number }}"
+          if [ -z "$build_number" ]; then
+          build_number=$(( latest_tag_build_number + 100 ))
+          echo "ビルド番号が指定されていません。計算されたビルド番号を使用します。"
+          fi
+          echo "latest_tag_build_number=$latest_tag_build_number" >> "$GITHUB_OUTPUT"
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+
+      - name: Dartをセットアップする
         uses: ./.github/actions/setup-dart
 
-      - name: Install cider
-        run: dart pub global activate cider
 
       - name: バージョンをバンプする
         run: |
+          dart pub global activate cider
           cider bump patch --build=${{ steps.hotfix-build-number.outputs.build_number }}
-
-      - name: バージョン文字列の「+」を「-」に置換する
-        run: |
-          sed -i -e '/^version:/ s/+/-/g' pubspec.yaml
-
-      - name: pubspec.lock を更新する（依存関係解決）
-        run: dart pub get
 
       - name: 更新後のバージョンを取得して出力する
         id: bump-version
         run: |
-          pubspec_version=$(grep -oP '(?<=version: ).*' pubspec.yaml)
-          echo "Updated version: $pubspec_version"
-          echo "pubspec_version=$pubspec_version" >> $GITHUB_OUTPUT
+          echo "pubspec_version=$(cider version | sed -e 's/.*-//')" >> "$GITHUB_OUTPUT"
 
       - name: Configure Git user
         run: |
