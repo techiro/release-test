@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           dart pub global activate cider
-          echo "version=$(cider --project-root=./packages/app version)" >> "$GITHUB_OUTPUT"
+          echo "version=$(cider version)" >> "$GITHUB_OUTPUT"
 
       - name: Get latest release tag
         id: get-latest-tag
