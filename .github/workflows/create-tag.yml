@@ -2,7 +2,7 @@ name: Create Tag
 
 on:
   issue_comment:
-    types: [created]
+    types: [edited]
 
 permissions:
   contents: write
