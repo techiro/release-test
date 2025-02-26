@@ -22,24 +22,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Dart
+        uses: ./.github/actions/setup-dart
+
       - name: Find pull request ref with comment
         uses: xt0rted/pull-request-comment-branch@e8b8daa837e8ea7331c0003c9c316a64c6d8b0b1 # v3.0.0
         id: find-ref
-
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ steps.find-ref.outputs.head_ref }}
-
-      - name: Set up Dart
-        uses: ./.github/actions/setup-dart
 
       - name: Get version from pubspec.yaml
         id: pubspec
         shell: bash
         run: |
+          git checkout ${{ steps.find-ref.outputs.head_sha }} pubspec.yaml
           dart pub global activate cider
           echo "version=$(cider version)" >> "$GITHUB_OUTPUT"
+
+      - run: echo $version
 
       - name: Get latest release tag
         id: get-latest-tag
