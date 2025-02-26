@@ -37,7 +37,7 @@ jobs:
           dart pub global activate cider
           echo "version=$(cider version)" >> "$GITHUB_OUTPUT"
 
-      - run: echo $version
+      - run: echo ${{ steps.pubspec.outputs.version }}
 
       - name: Get latest release tag
         id: get-latest-tag
