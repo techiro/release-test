@@ -6,7 +6,11 @@ on:
       build_number:
         type: string
         required: false
-        description: 'ビルド番号を指定してください'
+        description: 'ビルド番号を指定してください。指定がなければ、最新のビルド番号に100を加えたものが使用されます'
+      target_branch:
+        type: string
+        required: false
+        description: 'ホットフィックスを切る元のブランチを指定してください。指定がなければ、最新のリリースタグが使用されます'
 
 permissions:
   contents: write
@@ -29,12 +33,12 @@ jobs:
 
       - name: 既存ブランチを削除
         run: |
-          branch_name="hotfix-from-${{ steps.get-latest-tag.outputs.tag }}"
-          # リモートにブランチが存在するかチェック
-          existing_branch=$(git ls-remote --heads origin "$branch_name")
+          check_branch_name="hotfix-from-${{ github.event.inputs.target_branch != '' && github.event.inputs.target_branch || steps.get-latest-tag.outputs.tag }}"
+
+          existing_branch=$(git ls-remote --heads origin "$check_branch_name")
           if [ -n "$existing_branch" ]; then
-            echo "既存のブランチが見つかりました: $branch_name を削除します。"
-            git push origin --delete "$branch_name"
+            echo "Existing branch found: $check_branch_name. Deleting it."
+            git push origin --delete "$check_branch_name"
           else
             echo "既存のブランチはありません。"
           fi
