@@ -1,0 +1,45 @@
+name: Trigger Label Action
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  label-triggered-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get branch name
+        id: branch-name
+        run: echo "branch_name=${{ github.head_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: Output branch name
+        run: echo "Branch name is ${{ steps.branch-name.outputs.branch_name }}"
+
+      - name: Get current date and time
+        id: date
+        run: echo "datetime=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with date
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `ラベルが追加されました。\n現在の日時: ${{ steps.date.outputs.datetime }}\nブランチ名: ${{ steps.branch-name.outputs.branch_name }}`
+            })
+
+      - name: Remove label
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              name: context.payload.label.name,
+            })
