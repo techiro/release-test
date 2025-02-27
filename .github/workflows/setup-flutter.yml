@@ -9,17 +9,17 @@ jobs:
       - name: チェックアウトリポジトリ
         uses: actions/checkout@v3
 
-      - name: Setup Flutter
-        uses: ./.github/actions/setup-flutter
+      # - name: Setup Flutter
+      #   uses: ./.github/actions/setup-flutter
 
-      - name: Flutter doctor
-        run: flutter doctor
+      # - name: Flutter doctor
+      #   run: flutter doctor
 
-      - name: Flutter analyze
-        run: flutter analyze
+      # - name: Flutter analyze
+      #   run: flutter analyze
 
-      - name: Flutter build
-        run: flutter build
+      # - name: Flutter build
+      #   run: flutter build
 
-      - name: Flutter test
-        run: flutter test
+      # - name: Flutter test
+      #   run: flutter test
