@@ -87,8 +87,17 @@ jobs:
               body: "> [!WARNING]\n> [タグ ${{ steps.pubspec.outputs.version }}](https://github.com/techiro/release-test/tags) は既に存在します。タグを削除して再試行してください。"
             })
 
+      - name: Generate GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: タグが存在しない場合、新しいタグを作成
         if: steps.check_tag.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           git tag "${{ steps.pubspec.outputs.version }}"
           git push origin "${{ steps.pubspec.outputs.version }}"
