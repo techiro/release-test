@@ -2,24 +2,6 @@ name: リリースノート作成
 
 on:
   workflow_dispatch:
-    inputs:
-      tag_name:
-        description: 'リリースするタグ名（例：v1.0.0）'
-        required: true
-      release_name:
-        description: 'リリース名（例：バージョン1.0.0）'
-        required: true
-      body:
-        description: 'リリースノートの内容'
-        required: false
-      draft:
-        description: 'ドラフトリリースとして作成する'
-        type: boolean
-        default: false
-      prerelease:
-        description: 'プレリリースとして作成する'
-        type: boolean
-        default: false
 
 jobs:
   create-release:
@@ -32,9 +14,4 @@ jobs:
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.event.inputs.tag_name }}
-          name: ${{ github.event.inputs.release_name }}
-          body: ${{ github.event.inputs.body }}
-          draft: ${{ github.event.inputs.draft }}
-          prerelease: ${{ github.event.inputs.prerelease }}
-          generateReleaseNotes: true
+          body: 'test release note'
