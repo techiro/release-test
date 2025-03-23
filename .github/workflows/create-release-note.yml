@@ -5,6 +5,21 @@ on:
     types: [labeled]
 
 jobs:
+  remove-label:
+    if: github.event.label.name == 'create-release-note'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove create-release-note label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'create-release-note'
+            })
+
   create-release:
     if: github.event.label.name == 'create-release-note'
     runs-on: ubuntu-latest
@@ -16,15 +31,3 @@ jobs:
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Remove create-release-note label
-        if: github.event.label.name == 'create-release-note'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.removeLabel({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'create-release-note'
-            })
