@@ -32,8 +32,17 @@ jobs:
       - name: 最新のタグと1個前のタグを取得
         id: get-tags
         run: |
-          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
-          previous_tag=$(git describe --tags `git rev-list --tags --max-count=2` 2>/dev/null | tail -n1 || echo "")
+          # タグを日付順にソートし、上位2つのタグを取得
+          all_tags=$(git tag --sort=-creatordate)
+          latest_tag=$(echo "$all_tags" | head -n1)
+          previous_tag=$(echo "$all_tags" | head -n2 | tail -n1)
+
+          # タグが見つからない場合はステップを終了
+          if [ -z "$latest_tag" ]; then
+            echo "タグが見つかりません。リリースノートの作成をスキップします。"
+            exit 1
+          fi
+
           echo "最新のタグ: $latest_tag"
           echo "1個前のタグ: $previous_tag"
           echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
@@ -44,3 +53,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.get-tags.outputs.latest_tag }}
+          makeLatest: true
+          generateReleaseNotes: true
+
