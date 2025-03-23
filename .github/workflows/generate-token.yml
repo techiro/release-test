@@ -1,4 +1,4 @@
-name: Generate Token Workflow
+name: Generate Token
 
 on: [workflow_dispatch]
 
