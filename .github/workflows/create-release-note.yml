@@ -26,17 +26,21 @@ jobs:
     steps:
       - name: リポジトリのチェックアウト
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Git Ref のデバッグプリント
+      - name: 最新のタグと1個前のタグを取得
+        id: get-tags
         run: |
-          find .git/refs
-          echo "GITHUB_REF: ${{ github.ref }}"
-          echo "GITHUB_HEAD_REF: ${{ github.head_ref }}"
-          echo "GITHUB_BASE_REF: ${{ github.base_ref }}"
-          echo "GITHUB_REF_NAME: ${{ github.ref_name }}"
-          echo "GITHUB_SHA: ${{ github.sha }}"
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+          previous_tag=$(git describe --tags `git rev-list --tags --max-count=2` 2>/dev/null | tail -n1 || echo "")
+          echo "最新のタグ: $latest_tag"
+          echo "1個前のタグ: $previous_tag"
+          echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+          echo "previous_tag=$previous_tag" >> $GITHUB_OUTPUT
 
       - name: リリースノートの作成
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.get-tags.outputs.latest_tag }}
