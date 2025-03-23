@@ -29,6 +29,7 @@ jobs:
 
       - name: Git Ref のデバッグプリント
         run: |
+          find .git/refs
           echo "GITHUB_REF: ${{ github.ref }}"
           echo "GITHUB_HEAD_REF: ${{ github.head_ref }}"
           echo "GITHUB_BASE_REF: ${{ github.base_ref }}"
