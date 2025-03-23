@@ -1,4 +1,4 @@
-name: リリースノート作成
+name: create release note workflow
 
 on:
   workflow_dispatch:
