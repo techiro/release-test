@@ -6,6 +6,7 @@ on:
 
 jobs:
   label-triggered-action:
+    if: github.event.label.name == 'label-action'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
