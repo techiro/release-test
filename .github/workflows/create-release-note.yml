@@ -1,18 +1,58 @@
 name: create release note workflow
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [labeled]
 
 jobs:
+  remove-label:
+    if: github.event.label.name == 'create-release-note'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove create-release-note label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'create-release-note'
+            })
+
   create-release:
+    if: github.event.label.name == 'create-release-note'
     runs-on: ubuntu-latest
     steps:
       - name: リポジトリのチェックアウト
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 最新のタグと1個前のタグを取得
+        id: get-tags
+        run: |
+          # タグを日付順にソートし、上位2つのタグを取得
+          all_tags=$(git tag --sort=-creatordate)
+          latest_tag=$(echo "$all_tags" | head -n1)
+          previous_tag=$(echo "$all_tags" | head -n2 | tail -n1)
+
+          # タグが見つからない場合はステップを終了
+          if [ -z "$latest_tag" ]; then
+            echo "タグが見つかりません。リリースノートの作成をスキップします。"
+            exit 1
+          fi
+
+          echo "最新のタグ: $latest_tag"
+          echo "1個前のタグ: $previous_tag"
+          echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+          echo "previous_tag=$previous_tag" >> $GITHUB_OUTPUT
 
       - name: リリースノートの作成
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
         with:
-          body: |
-            'test release note'
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.get-tags.outputs.latest_tag }}
+          makeLatest: true
+          generateReleaseNotes: true
+
