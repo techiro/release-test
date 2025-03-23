@@ -1,10 +1,12 @@
 name: create release note workflow
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [labeled]
 
 jobs:
   create-release:
+    if: github.event.label.name == 'create-release-note'
     runs-on: ubuntu-latest
     steps:
       - name: リポジトリのチェックアウト
@@ -13,6 +15,4 @@ jobs:
       - name: リリースノートの作成
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
         with:
-          body: |
-            'test release note'
           token: ${{ secrets.GITHUB_TOKEN }}
