@@ -1,4 +1,4 @@
-name: Tag Trigger Workflow
+name: Trigger Tag Workflow
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         run: |
           echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Generate GitHub App Token
+      - name: App Token を生成
         uses: actions/create-github-app-token@v1
         id: app-token
         with:

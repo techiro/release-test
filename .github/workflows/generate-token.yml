@@ -1,4 +1,4 @@
-name: Generate Token Workflow
+name: Generate Token
 
 on: [workflow_dispatch]
 
@@ -6,7 +6,7 @@ jobs:
   generate-token:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate token
+      - name: techiro release test の GitHub App のToken を生成
         id: generate_token
         uses: actions/create-github-app-token@v1
         with:
