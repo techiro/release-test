@@ -27,6 +27,14 @@ jobs:
       - name: リポジトリのチェックアウト
         uses: actions/checkout@v4
 
+      - name: Git Ref のデバッグプリント
+        run: |
+          echo "GITHUB_REF: ${{ github.ref }}"
+          echo "GITHUB_HEAD_REF: ${{ github.head_ref }}"
+          echo "GITHUB_BASE_REF: ${{ github.base_ref }}"
+          echo "GITHUB_REF_NAME: ${{ github.ref_name }}"
+          echo "GITHUB_SHA: ${{ github.sha }}"
+
       - name: リリースノートの作成
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
         with:
