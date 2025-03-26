@@ -58,7 +58,7 @@ jobs:
       - name: checkout code with full history
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.pull_request.head.sha }}  # PRの最新コミットを参照
+          # ref: ${{ github.event.pull_request.head.sha }}  # PRの最新コミットを参照
           token: ${{ steps.generate_github_app_token.outputs.token }} # GitHub Appのトークンを使用
 
       - name: create release tag
