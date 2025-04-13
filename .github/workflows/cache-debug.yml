@@ -1,0 +1,243 @@
+name: Cache Debug Workflow
+
+# このワークフローはGitHub UIから手動でトリガーされます
+on:
+  workflow_dispatch:
+    inputs:
+      cache_key_suffix:
+        description: 'キャッシュキーに追加するオプションのサフィックス（異なるシナリオをテストするため）'
+        required: false
+        default: ''
+      force_cache_miss:
+        description: 'キャッシュミスを強制してキャッシュ作成をテストする'
+        required: false
+        default: 'false'
+        type: boolean
+      dependency_file:
+        description: 'キャッシュキー生成に使用する依存関係ファイル'
+        required: false
+        default: 'pubspec.lock'
+        type: choice
+        options:
+          - pubspec.lock
+          - pubspec.yaml
+          - .tool-versions
+
+jobs:
+  # ジョブ1: 基本的なキャッシュのデモンストレーション
+  basic-cache-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ステップ1: 詳細な説明付きのキャッシュデモンストレーション
+      - name: Pub依存関係のキャッシュ
+        id: cache-pub
+        uses: actions/cache@v3
+        with:
+          # キャッシュされるディレクトリのパス
+          path: |
+            ~/.pub-cache
+            .dart_tool/
+          # キャッシュキーは複数の部分で構成されています:
+          # 1. この特定のキャッシュを識別するプレフィックス
+          # 2. クロスOS問題を避けるためのランナーOS
+          # 3. 依存関係が変更されたときにキャッシュを無効にするための依存関係ファイルのハッシュ
+          # 4. テスト用のオプションのユーザー提供サフィックス
+          key: pub-deps-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}
+          # リストアキーは、完全一致のキーが見つからない場合に使用されます
+          # キャッシュヒットが発生するまで順番に試行されます
+          restore-keys: |
+            pub-deps-${{ runner.os }}-
+            pub-deps-
+
+      # ステップ2: デバッグ用のキャッシュ状態出力
+      - name: キャッシュ状態のデバッグ
+        run: |
+          echo "============ キャッシュデバッグ情報 ============"
+          echo "キャッシュヒット: ${{ steps.cache-pub.outputs.cache-hit == 'true' && '✅ あり' || '❌ なし' }}"
+          echo "キャッシュキー: pub-deps-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}"
+          echo "キャッシュリストアキー:"
+          echo "  - pub-deps-${{ runner.os }}-"
+          echo "  - pub-deps-"
+          echo "使用された依存関係ファイル: ${{ inputs.dependency_file }}"
+          echo "強制キャッシュミス: ${{ inputs.force_cache_miss }}"
+          echo "キャッシュサフィックス: ${{ inputs.cache_key_suffix }}"
+          echo "==========================================="
+
+      # ステップ3: 依存関係のインストールをシミュレート（キャッシュミス時のみ実行）
+      - name: 依存関係のインストール（キャッシュミス時）
+        if: steps.cache-pub.outputs.cache-hit != 'true' || inputs.force_cache_miss == 'true'
+        run: |
+          echo "キャッシュミスが検出されたか強制されました。依存関係をインストールしています..."
+          echo "通常はここで「pub get」などのコマンドを実行します"
+          # キャッシュコンテンツの変更を示すダミーファイルを作成
+          mkdir -p ~/.pub-cache
+          echo "インストール日時: $(date)" > ~/.pub-cache/install-timestamp.txt
+          echo "依存関係が正常にインストールされました！"
+
+      # ステップ4: キャッシュの内容を表示
+      - name: キャッシュ内容の表示
+        run: |
+          echo "============ キャッシュの内容 ============"
+          if [ -d "~/.pub-cache" ]; then
+            ls -la ~/.pub-cache || echo "ディレクトリにアクセスできません"
+            if [ -f "~/.pub-cache/install-timestamp.txt" ]; then
+              echo "インストールタイムスタンプ: $(cat ~/.pub-cache/install-timestamp.txt)"
+            fi
+          else
+            echo "キャッシュディレクトリはまだ存在しません"
+          fi
+          echo "========================================"
+
+  # ジョブ2: 複数のキャッシュを使用した高度なデモンストレーション
+  advanced-cache-demo:
+    runs-on: ubuntu-latest
+    needs: basic-cache-demo
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 1: Primary cache for dependencies
+      - name: Cache Primary Dependencies
+        id: cache-primary
+        uses: actions/cache@v3
+        with:
+          path: ~/.primary-cache
+          key: primary-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}
+
+      # Step 2: Secondary cache with different key
+      - name: Cache Secondary Dependencies
+        id: cache-secondary
+        uses: actions/cache@v3
+        with:
+          path: ~/.secondary-cache
+          # Different hash source to demonstrate independent caching
+          key: secondary-${{ runner.os }}-${{ hashFiles('.gitignore') }}-${{ inputs.cache_key_suffix }}
+
+      # Step 3: Create cache content if cache miss
+      - name: Create Cache Content
+        run: |
+          mkdir -p ~/.primary-cache ~/.secondary-cache
+          
+          if [ "${{ steps.cache-primary.outputs.cache-hit }}" != "true" ] || [ "${{ inputs.force_cache_miss }}" == "true" ]; then
+            echo "Creating primary cache content at $(date)" > ~/.primary-cache/created.txt
+            echo "Cache size: $(( RANDOM % 1000 + 100 ))KB" >> ~/.primary-cache/created.txt
+          fi
+          
+          if [ "${{ steps.cache-secondary.outputs.cache-hit }}" != "true" ] || [ "${{ inputs.force_cache_miss }}" == "true" ]; then
+            echo "Creating secondary cache content at $(date)" > ~/.secondary-cache/created.txt
+            echo "Cache size: $(( RANDOM % 1000 + 100 ))KB" >> ~/.secondary-cache/created.txt
+          fi
+
+      # Step 4: Comprehensive cache debug information
+      - name: Comprehensive Cache Debug
+        run: |
+          echo "=============== キャッシュシステムの説明 ==============="
+          echo "GitHub Actionsキャッシュの構成要素:"
+          echo ""
+          echo "1. キャッシュキー: 特定のキャッシュを識別する一意の識別子"
+          echo "   - 形式: {プレフィックス}-{runner.os}-{ハッシュ}-{サフィックス}"
+          echo "   - 例: pub-deps-Linux-a1b2c3d4-custom"
+          echo ""
+          echo "2. リストアキー: 完全一致が見つからない場合のフォールバックキー"
+          echo "   - 一致が見つかるまで順番に試行される"
+          echo "   - 部分一致が許容される（プレフィックスマッチング）"
+          echo ""
+          echo "3. キャッシュパス: キャッシュされるディレクトリ/ファイル"
+          echo "   - 複数のパスを含めることができる"
+          echo "   - グロブパターンをサポート"
+          echo ""
+          echo "4. キャッシュヒット/ミス:"
+          echo "   - ヒット: 完全なキャッシュキーの一致が見つかった"
+          echo "   - 部分ヒット: リストアキーの一致が見つかった"
+          echo "   - ミス: 一致するキャッシュが見つからなかった"
+          echo ""
+          echo "5. キャッシュの削除:"
+          echo "   - GitHubはリポジトリごとに10GBの制限がある"
+          echo "   - 最も長く使用されていないキャッシュが最初に削除される"
+          echo "   - 7日間使用されていないキャッシュは自動的に削除される"
+          echo "========================================================"
+          
+          echo ""
+          echo "=============== 現在のキャッシュ状態 ==============="
+          echo "プライマリキャッシュ:"
+          echo "  - ヒット: ${{ steps.cache-primary.outputs.cache-hit == 'true' && '✅ あり' || '❌ なし' }}"
+          echo "  - キー: primary-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}"
+          if [ -f ~/.primary-cache/created.txt ]; then
+            echo "  - 内容: $(cat ~/.primary-cache/created.txt)"
+          else
+            echo "  - 内容: 利用不可"
+          fi
+          
+          echo ""
+          echo "セカンダリキャッシュ:"
+          echo "  - ヒット: ${{ steps.cache-secondary.outputs.cache-hit == 'true' && '✅ あり' || '❌ なし' }}"
+          echo "  - キー: secondary-${{ runner.os }}-${{ hashFiles('.gitignore') }}-${{ inputs.cache_key_suffix }}"
+          if [ -f ~/.secondary-cache/created.txt ]; then
+            echo "  - 内容: $(cat ~/.secondary-cache/created.txt)"
+          else
+            echo "  - 内容: 利用不可"
+          fi
+          echo "===================================================="
+
+  # ジョブ3: キャッシュ無効化のデモンストレーション
+  cache-invalidation-demo:
+    runs-on: ubuntu-latest
+    needs: advanced-cache-demo
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 1: Create a unique cache key based on current time
+      - name: Generate Unique Cache Key
+        id: cache-key-gen
+        run: |
+          TIMESTAMP=$(date +%s)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "Generated unique timestamp: $TIMESTAMP"
+
+      # Step 2: Cache with timestamp-based key
+      - name: Cache With Timestamp
+        id: cache-timestamp
+        uses: actions/cache@v3
+        with:
+          path: ~/.timestamp-cache
+          # Using timestamp ensures this is always a cache miss
+          key: timestamp-cache-${{ steps.cache-key-gen.outputs.timestamp }}
+          # But we can still restore from previous runs
+          restore-keys: |
+            timestamp-cache-
+
+      # Step 3: Demonstrate cache invalidation
+      - name: Demonstrate Cache Invalidation
+        run: |
+          mkdir -p ~/.timestamp-cache
+          echo "Cache created at $(date)" > ~/.timestamp-cache/info.txt
+          echo "This cache will be a 'miss' on the next run because the timestamp changes" >> ~/.timestamp-cache/info.txt
+          
+          echo "=============== キャッシュの無効化 ==============="
+          echo "キャッシュの無効化が発生するケース:"
+          echo ""
+          echo "1. キャッシュキーが変更された場合"
+          echo "   - 現在のキー: timestamp-cache-${{ steps.cache-key-gen.outputs.timestamp }}"
+          echo "   - 次回の実行では異なるタイムスタンプになる"
+          echo ""
+          echo "2. キー内のハッシュが変更された場合"
+          echo "   - 例: 依存関係が更新された場合"
+          echo "   - hashFiles()関数が異なる結果を生成する"
+          echo ""
+          echo "3. 手動でキャッシュをクリアした場合"
+          echo "   - GitHub APIまたはUI経由"
+          echo ""
+          echo "4. キャッシュの有効期限"
+          echo "   - 7日間使用されていないキャッシュは削除される"
+          echo "   - リポジトリの10GB制限により早期に削除される場合がある"
+          echo "==================================================="
+          
+          if [ -f ~/.timestamp-cache/info.txt ]; then
+            echo ""
+            echo "現在のキャッシュ内容:"
+            cat ~/.timestamp-cache/info.txt
+          fi
