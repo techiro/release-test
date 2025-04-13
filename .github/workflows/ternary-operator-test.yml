@@ -1,0 +1,80 @@
+name: Test Ternary Operator in GitHub Actions
+
+on:
+  workflow_dispatch:
+    inputs:
+      is_release_branch:
+        description: 'Set IS_RELEASE_BRANCH to true'
+        type: boolean
+        default: false
+      is_hotfix_branch:
+        description: 'Set IS_HOTFIX_BRANCH to true'
+        type: boolean
+        default: false
+
+jobs:
+  test-ternary-operator:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set environment variables based on inputs (for workflow_dispatch)
+      - name: Set environment variables from inputs
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "IS_RELEASE_BRANCH=${{ github.event.inputs.is_release_branch }}" >> $GITHUB_ENV
+          echo "IS_HOTFIX_BRANCH=${{ github.event.inputs.is_hotfix_branch }}" >> $GITHUB_ENV
+
+      # Set environment variables based on branch name (for push event)
+      - name: Set environment variables from branch
+        if: github.event_name == 'push'
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/release/"* ]]; then
+            echo "IS_RELEASE_BRANCH=true" >> $GITHUB_ENV
+            echo "IS_HOTFIX_BRANCH=false" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/hotfix/"* ]]; then
+            echo "IS_RELEASE_BRANCH=false" >> $GITHUB_ENV
+            echo "IS_HOTFIX_BRANCH=true" >> $GITHUB_ENV
+          else
+            echo "IS_RELEASE_BRANCH=false" >> $GITHUB_ENV
+            echo "IS_HOTFIX_BRANCH=false" >> $GITHUB_ENV
+          fi
+
+      # Test case 1: Both false
+      - name: Test case 1 - Both false
+        run: |
+          echo "IS_RELEASE_BRANCH: ${{ env.IS_RELEASE_BRANCH }}"
+          echo "IS_HOTFIX_BRANCH: ${{ env.IS_HOTFIX_BRANCH }}"
+          RESULT="${{ env.IS_RELEASE_BRANCH == 'true' && 'release' || env.IS_HOTFIX_BRANCH == 'true' && 'hotfix' || 'default' }}"
+          echo "Result: $RESULT"
+          echo "Expected: default"
+
+      # Test case 2: IS_RELEASE_BRANCH=true
+      - name: Test case 2 - IS_RELEASE_BRANCH=true
+        run: |
+          echo "IS_RELEASE_BRANCH=true" >> $GITHUB_ENV
+          echo "IS_HOTFIX_BRANCH=false" >> $GITHUB_ENV
+          echo "IS_RELEASE_BRANCH: ${{ env.IS_RELEASE_BRANCH }}"
+          echo "IS_HOTFIX_BRANCH: ${{ env.IS_HOTFIX_BRANCH }}"
+          RESULT="${{ env.IS_RELEASE_BRANCH == 'true' && 'release' || env.IS_HOTFIX_BRANCH == 'true' && 'hotfix' || 'default' }}"
+          echo "Result: $RESULT"
+          echo "Expected: release"
+
+      # Test case 3: IS_HOTFIX_BRANCH=true
+      - name: Test case 3 - IS_HOTFIX_BRANCH=true
+        run: |
+          echo "IS_RELEASE_BRANCH=false" >> $GITHUB_ENV
+          echo "IS_HOTFIX_BRANCH=true" >> $GITHUB_ENV
+          echo "IS_RELEASE_BRANCH: ${{ env.IS_RELEASE_BRANCH }}"
+          echo "IS_HOTFIX_BRANCH: ${{ env.IS_HOTFIX_BRANCH }}"
+          RESULT="${{ env.IS_RELEASE_BRANCH == 'true' && 'release' || env.IS_HOTFIX_BRANCH == 'true' && 'hotfix' || 'default' }}"
+          echo "Result: $RESULT"
+          echo "Expected: hotfix"
+
+      # Test the original expression exactly as provided
+      - name: Test original expression
+        run: |
+          echo "Original expression result: ${{ env.IS_RELEASE_BRANCH == 'true' && 'release' || env.IS_HOTFIX_BRANCH == 'true' && 'hotfix' }}"
+          echo "IS_RELEASE_BRANCH: ${{ env.IS_RELEASE_BRANCH }}"
+          echo "IS_HOTFIX_BRANCH: ${{ env.IS_HOTFIX_BRANCH }}"
