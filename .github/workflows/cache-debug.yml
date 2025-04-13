@@ -1,20 +1,20 @@
 name: Cache Debug Workflow
 
-# This workflow is triggered manually via the GitHub UI
+# このワークフローはGitHub UIから手動でトリガーされます
 on:
   workflow_dispatch:
     inputs:
       cache_key_suffix:
-        description: 'Optional suffix to add to cache keys for testing different scenarios'
+        description: 'キャッシュキーに追加するオプションのサフィックス（異なるシナリオをテストするため）'
         required: false
         default: ''
       force_cache_miss:
-        description: 'Force a cache miss to test cache creation'
+        description: 'キャッシュミスを強制してキャッシュ作成をテストする'
         required: false
         default: 'false'
         type: boolean
       dependency_file:
-        description: 'Which dependency file to use for cache key generation'
+        description: 'キャッシュキー生成に使用する依存関係ファイル'
         required: false
         default: 'pubspec.lock'
         type: choice
@@ -24,74 +24,74 @@ on:
           - .tool-versions
 
 jobs:
-  # Job 1: Basic cache demonstration
+  # ジョブ1: 基本的なキャッシュのデモンストレーション
   basic-cache-demo:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 1: Cache demonstration with detailed explanation
-      - name: Cache Pub Dependencies
+      # ステップ1: 詳細な説明付きのキャッシュデモンストレーション
+      - name: Pub依存関係のキャッシュ
         id: cache-pub
         uses: actions/cache@v3
         with:
-          # Path to the directory that will be cached
+          # キャッシュされるディレクトリのパス
           path: |
             ~/.pub-cache
             .dart_tool/
-          # The cache key is composed of multiple parts:
-          # 1. A prefix to identify this specific cache
-          # 2. The runner OS to avoid cross-OS cache issues
-          # 3. The hash of the dependency file to invalidate cache when dependencies change
-          # 4. Optional user-provided suffix for testing
+          # キャッシュキーは複数の部分で構成されています:
+          # 1. この特定のキャッシュを識別するプレフィックス
+          # 2. クロスOS問題を避けるためのランナーOS
+          # 3. 依存関係が変更されたときにキャッシュを無効にするための依存関係ファイルのハッシュ
+          # 4. テスト用のオプションのユーザー提供サフィックス
           key: pub-deps-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}
-          # Restore keys are used when the exact key is not found
-          # They are tried in order until a cache hit occurs
+          # リストアキーは、完全一致のキーが見つからない場合に使用されます
+          # キャッシュヒットが発生するまで順番に試行されます
           restore-keys: |
             pub-deps-${{ runner.os }}-
             pub-deps-
 
-      # Step 2: Output cache status for debugging
-      - name: Debug Cache Status
+      # ステップ2: デバッグ用のキャッシュ状態出力
+      - name: キャッシュ状態のデバッグ
         run: |
-          echo "============ CACHE DEBUG INFO ============"
-          echo "Cache hit: ${{ steps.cache-pub.outputs.cache-hit == 'true' && '✅ Yes' || '❌ No' }}"
-          echo "Cache key: pub-deps-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}"
-          echo "Cache restore keys:"
+          echo "============ キャッシュデバッグ情報 ============"
+          echo "キャッシュヒット: ${{ steps.cache-pub.outputs.cache-hit == 'true' && '✅ あり' || '❌ なし' }}"
+          echo "キャッシュキー: pub-deps-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}"
+          echo "キャッシュリストアキー:"
           echo "  - pub-deps-${{ runner.os }}-"
           echo "  - pub-deps-"
-          echo "Dependency file used: ${{ inputs.dependency_file }}"
-          echo "Force cache miss: ${{ inputs.force_cache_miss }}"
-          echo "Cache suffix: ${{ inputs.cache_key_suffix }}"
+          echo "使用された依存関係ファイル: ${{ inputs.dependency_file }}"
+          echo "強制キャッシュミス: ${{ inputs.force_cache_miss }}"
+          echo "キャッシュサフィックス: ${{ inputs.cache_key_suffix }}"
           echo "==========================================="
 
-      # Step 3: Simulate dependency installation (only runs on cache miss)
-      - name: Install Dependencies (on cache miss)
+      # ステップ3: 依存関係のインストールをシミュレート（キャッシュミス時のみ実行）
+      - name: 依存関係のインストール（キャッシュミス時）
         if: steps.cache-pub.outputs.cache-hit != 'true' || inputs.force_cache_miss == 'true'
         run: |
-          echo "Cache miss detected or forced. Installing dependencies..."
-          echo "This would normally run 'pub get' or similar command"
-          # Create a dummy file to demonstrate cache content changes
+          echo "キャッシュミスが検出されたか強制されました。依存関係をインストールしています..."
+          echo "通常はここで「pub get」などのコマンドを実行します"
+          # キャッシュコンテンツの変更を示すダミーファイルを作成
           mkdir -p ~/.pub-cache
-          echo "Installed at $(date)" > ~/.pub-cache/install-timestamp.txt
-          echo "Dependencies installed successfully!"
+          echo "インストール日時: $(date)" > ~/.pub-cache/install-timestamp.txt
+          echo "依存関係が正常にインストールされました！"
 
-      # Step 4: Show cache contents
-      - name: Show Cache Contents
+      # ステップ4: キャッシュの内容を表示
+      - name: キャッシュ内容の表示
         run: |
-          echo "============ CACHE CONTENTS ============"
+          echo "============ キャッシュの内容 ============"
           if [ -d "~/.pub-cache" ]; then
-            ls -la ~/.pub-cache || echo "Directory not accessible"
+            ls -la ~/.pub-cache || echo "ディレクトリにアクセスできません"
             if [ -f "~/.pub-cache/install-timestamp.txt" ]; then
-              echo "Install timestamp: $(cat ~/.pub-cache/install-timestamp.txt)"
+              echo "インストールタイムスタンプ: $(cat ~/.pub-cache/install-timestamp.txt)"
             fi
           else
-            echo "Cache directory does not exist yet"
+            echo "キャッシュディレクトリはまだ存在しません"
           fi
           echo "========================================"
 
-  # Job 2: Advanced cache demonstration with multiple caches
+  # ジョブ2: 複数のキャッシュを使用した高度なデモンストレーション
   advanced-cache-demo:
     runs-on: ubuntu-latest
     needs: basic-cache-demo
@@ -134,55 +134,55 @@ jobs:
       # Step 4: Comprehensive cache debug information
       - name: Comprehensive Cache Debug
         run: |
-          echo "=============== CACHE SYSTEM EXPLANATION ==============="
-          echo "GitHub Actions Cache Components:"
+          echo "=============== キャッシュシステムの説明 ==============="
+          echo "GitHub Actionsキャッシュの構成要素:"
           echo ""
-          echo "1. Cache Key: Unique identifier for a specific cache"
-          echo "   - Format: {prefix}-{runner.os}-{hash}-{suffix}"
-          echo "   - Example: pub-deps-Linux-a1b2c3d4-custom"
+          echo "1. キャッシュキー: 特定のキャッシュを識別する一意の識別子"
+          echo "   - 形式: {プレフィックス}-{runner.os}-{ハッシュ}-{サフィックス}"
+          echo "   - 例: pub-deps-Linux-a1b2c3d4-custom"
           echo ""
-          echo "2. Restore Keys: Fallback keys when exact match isn't found"
-          echo "   - Tried in order until a match is found"
-          echo "   - Partial matches are accepted (prefix matching)"
+          echo "2. リストアキー: 完全一致が見つからない場合のフォールバックキー"
+          echo "   - 一致が見つかるまで順番に試行される"
+          echo "   - 部分一致が許容される（プレフィックスマッチング）"
           echo ""
-          echo "3. Cache Paths: Directories/files to be cached"
-          echo "   - Can include multiple paths"
-          echo "   - Supports glob patterns"
+          echo "3. キャッシュパス: キャッシュされるディレクトリ/ファイル"
+          echo "   - 複数のパスを含めることができる"
+          echo "   - グロブパターンをサポート"
           echo ""
-          echo "4. Cache Hit/Miss:"
-          echo "   - Hit: Exact cache key match found"
-          echo "   - Partial Hit: Restore key match found"
-          echo "   - Miss: No matching cache found"
+          echo "4. キャッシュヒット/ミス:"
+          echo "   - ヒット: 完全なキャッシュキーの一致が見つかった"
+          echo "   - 部分ヒット: リストアキーの一致が見つかった"
+          echo "   - ミス: 一致するキャッシュが見つからなかった"
           echo ""
-          echo "5. Cache Eviction:"
-          echo "   - GitHub has a 10GB limit per repository"
-          echo "   - Least recently used caches are evicted first"
-          echo "   - Caches unused for 7 days are automatically removed"
+          echo "5. キャッシュの削除:"
+          echo "   - GitHubはリポジトリごとに10GBの制限がある"
+          echo "   - 最も長く使用されていないキャッシュが最初に削除される"
+          echo "   - 7日間使用されていないキャッシュは自動的に削除される"
           echo "========================================================"
           
           echo ""
-          echo "=============== CURRENT CACHE STATUS ==============="
-          echo "Primary Cache:"
-          echo "  - Hit: ${{ steps.cache-primary.outputs.cache-hit == 'true' && '✅ Yes' || '❌ No' }}"
-          echo "  - Key: primary-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}"
+          echo "=============== 現在のキャッシュ状態 ==============="
+          echo "プライマリキャッシュ:"
+          echo "  - ヒット: ${{ steps.cache-primary.outputs.cache-hit == 'true' && '✅ あり' || '❌ なし' }}"
+          echo "  - キー: primary-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}"
           if [ -f ~/.primary-cache/created.txt ]; then
-            echo "  - Content: $(cat ~/.primary-cache/created.txt)"
+            echo "  - 内容: $(cat ~/.primary-cache/created.txt)"
           else
-            echo "  - Content: Not available"
+            echo "  - 内容: 利用不可"
           fi
           
           echo ""
-          echo "Secondary Cache:"
-          echo "  - Hit: ${{ steps.cache-secondary.outputs.cache-hit == 'true' && '✅ Yes' || '❌ No' }}"
-          echo "  - Key: secondary-${{ runner.os }}-${{ hashFiles('.gitignore') }}-${{ inputs.cache_key_suffix }}"
+          echo "セカンダリキャッシュ:"
+          echo "  - ヒット: ${{ steps.cache-secondary.outputs.cache-hit == 'true' && '✅ あり' || '❌ なし' }}"
+          echo "  - キー: secondary-${{ runner.os }}-${{ hashFiles('.gitignore') }}-${{ inputs.cache_key_suffix }}"
           if [ -f ~/.secondary-cache/created.txt ]; then
-            echo "  - Content: $(cat ~/.secondary-cache/created.txt)"
+            echo "  - 内容: $(cat ~/.secondary-cache/created.txt)"
           else
-            echo "  - Content: Not available"
+            echo "  - 内容: 利用不可"
           fi
           echo "===================================================="
 
-  # Job 3: Cache invalidation demonstration
+  # ジョブ3: キャッシュ無効化のデモンストレーション
   cache-invalidation-demo:
     runs-on: ubuntu-latest
     needs: advanced-cache-demo
@@ -217,27 +217,27 @@ jobs:
           echo "Cache created at $(date)" > ~/.timestamp-cache/info.txt
           echo "This cache will be a 'miss' on the next run because the timestamp changes" >> ~/.timestamp-cache/info.txt
           
-          echo "=============== CACHE INVALIDATION ==============="
-          echo "Cache invalidation occurs when:"
+          echo "=============== キャッシュの無効化 ==============="
+          echo "キャッシュの無効化が発生するケース:"
           echo ""
-          echo "1. The cache key changes"
-          echo "   - Current key: timestamp-cache-${{ steps.cache-key-gen.outputs.timestamp }}"
-          echo "   - Next run will have a different timestamp"
+          echo "1. キャッシュキーが変更された場合"
+          echo "   - 現在のキー: timestamp-cache-${{ steps.cache-key-gen.outputs.timestamp }}"
+          echo "   - 次回の実行では異なるタイムスタンプになる"
           echo ""
-          echo "2. The hash in the key changes"
-          echo "   - Example: When dependencies are updated"
-          echo "   - The hashFiles() function will produce a different result"
+          echo "2. キー内のハッシュが変更された場合"
+          echo "   - 例: 依存関係が更新された場合"
+          echo "   - hashFiles()関数が異なる結果を生成する"
           echo ""
-          echo "3. Manual cache clearing"
-          echo "   - Via GitHub API or UI"
+          echo "3. 手動でキャッシュをクリアした場合"
+          echo "   - GitHub APIまたはUI経由"
           echo ""
-          echo "4. Cache expiration"
-          echo "   - Caches unused for 7 days are removed"
-          echo "   - 10GB repository limit may cause early eviction"
+          echo "4. キャッシュの有効期限"
+          echo "   - 7日間使用されていないキャッシュは削除される"
+          echo "   - リポジトリの10GB制限により早期に削除される場合がある"
           echo "==================================================="
           
           if [ -f ~/.timestamp-cache/info.txt ]; then
             echo ""
-            echo "Current cache content:"
+            echo "現在のキャッシュ内容:"
             cat ~/.timestamp-cache/info.txt
           fi
