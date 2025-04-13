@@ -1,9 +1,6 @@
 name: Test Ternary Operator in GitHub Actions
 
 on:
-  push:
-    branches:
-      - ternary-test
   workflow_dispatch:
     inputs:
       is_release_branch:
