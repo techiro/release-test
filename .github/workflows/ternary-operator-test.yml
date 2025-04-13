@@ -46,13 +46,7 @@ jobs:
         run: |
           echo "IS_RELEASE_BRANCH: ${{ env.IS_RELEASE_BRANCH }}"
           echo "IS_HOTFIX_BRANCH: ${{ env.IS_HOTFIX_BRANCH }}"
-          if [ "${{ env.IS_RELEASE_BRANCH }}" = "true" ]; then
-            RESULT="release"
-          elif [ "${{ env.IS_HOTFIX_BRANCH }}" = "true" ]; then
-            RESULT="hotfix"
-          else
-            RESULT="default"
-          fi
+          RESULT="${{ env.IS_RELEASE_BRANCH == 'true' && 'release' || env.IS_HOTFIX_BRANCH == 'true' && 'hotfix' || 'default' }}"
           echo "Result: $RESULT"
           echo "Expected: default"
 
@@ -63,11 +57,7 @@ jobs:
           echo "IS_HOTFIX_BRANCH=false" >> $GITHUB_ENV
           echo "IS_RELEASE_BRANCH: ${{ env.IS_RELEASE_BRANCH }}"
           echo "IS_HOTFIX_BRANCH: ${{ env.IS_HOTFIX_BRANCH }}"
-          if [ "${{ env.IS_RELEASE_BRANCH }}" = "true" ]; then
-            RESULT="release"
-          else
-            RESULT="default"
-          fi
+          RESULT="${{ env.IS_RELEASE_BRANCH == 'true' && 'release' || env.IS_HOTFIX_BRANCH == 'true' && 'hotfix' || 'default' }}"
           echo "Result: $RESULT"
           echo "Expected: release"
 
@@ -78,24 +68,13 @@ jobs:
           echo "IS_HOTFIX_BRANCH=true" >> $GITHUB_ENV
           echo "IS_RELEASE_BRANCH: ${{ env.IS_RELEASE_BRANCH }}"
           echo "IS_HOTFIX_BRANCH: ${{ env.IS_HOTFIX_BRANCH }}"
-          if [ "${{ env.IS_HOTFIX_BRANCH }}" = "true" ]; then
-            RESULT="hotfix"
-          else
-            RESULT="default"
-          fi
+          RESULT="${{ env.IS_RELEASE_BRANCH == 'true' && 'release' || env.IS_HOTFIX_BRANCH == 'true' && 'hotfix' || 'default' }}"
           echo "Result: $RESULT"
           echo "Expected: hotfix"
 
       # Test the original expression exactly as provided
       - name: Test original expression
         run: |
-          if [ "${{ env.IS_RELEASE_BRANCH }}" = "true" ]; then
-            RESULT="release"
-          elif [ "${{ env.IS_HOTFIX_BRANCH }}" = "true" ]; then
-            RESULT="hotfix"
-          else
-            RESULT="default"
-          fi
-          echo "Original expression result: $RESULT"
+          echo "Original expression result: ${{ env.IS_RELEASE_BRANCH == 'true' && 'release' || env.IS_HOTFIX_BRANCH == 'true' && 'hotfix' }}"
           echo "IS_RELEASE_BRANCH: ${{ env.IS_RELEASE_BRANCH }}"
           echo "IS_HOTFIX_BRANCH: ${{ env.IS_HOTFIX_BRANCH }}"
