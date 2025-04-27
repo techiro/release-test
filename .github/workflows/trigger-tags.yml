@@ -3,7 +3,7 @@ name: Trigger Tags
 on:
   push:
     tags:
-    - '*'
+    - 'create-release-note-*'
 
 jobs:
   build:
@@ -15,5 +15,3 @@ jobs:
       uses: actions/checkout@v3
     - name: リリースを作成
       uses: ncipollo/release-action@v1
-      with:
-        bodyFile: "release-note-body.md"
