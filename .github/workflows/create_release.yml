@@ -68,7 +68,6 @@ jobs:
           
           # Convert version format for cider (- to +)
           sed -i -E 's/version: ([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)/version: \1+\2/' pubspec.yaml
-          
           # Handle custom version if provided
           if [ -n "${{ github.event.inputs.custom_version }}" ]; then
             cider version "${{ github.event.inputs.custom_version }}+$build_number"
@@ -79,7 +78,6 @@ jobs:
           
           # Convert version format back (+ to -)
           sed -i -E 's/version: ([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)/version: \1-\2/' pubspec.yaml
-          
           # Get the new version
           new_version=$(cider version)
           version_without_build=$(echo "$new_version" | sed -e 's/-.*$//')
@@ -98,7 +96,6 @@ jobs:
             echo "$branch_name が存在していたので削除します。"
             git push origin --delete "$branch_name"
           fi
-          
           echo "Creating branch: $branch_name"
           git checkout -b "$branch_name"
           git push --set-upstream origin "$branch_name"
@@ -115,30 +112,13 @@ jobs:
         run: |
           git commit -m "Bump version to ${{ steps.bump-version.outputs.new_version }}" || echo "No changes to commit"
           git push --set-upstream origin ${{ steps.create-release-branch.outputs.branch_name }}
-
-      - name: リリースノートの内容を取得
-        id: get-release-notes
-        run: |
-          if [ -f "release-note-body.md" ]; then
-            echo "release_notes<<EOF" >> $GITHUB_OUTPUT
-            cat release-note-body.md >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "release_notes=## What's Changed" >> $GITHUB_OUTPUT
-          fi
-
       - name: Create PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create PR body with release notes
-          echo "# Release ${{ steps.bump-version.outputs.version_without_build }}" > pr_body.md
-          echo "" >> pr_body.md
-          echo "${{ steps.get-release-notes.outputs.release_notes }}" >> pr_body.md
-          
           gh pr create \
             --base main \
             --head ${{ steps.create-release-branch.outputs.branch_name }} \
             --label "release" \
             --title "Release ${{ steps.bump-version.outputs.version_without_build }}" \
-            --body-file pr_body.md
+            --body-file "./pr-body/release-pr-body.md"
