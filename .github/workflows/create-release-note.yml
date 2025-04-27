@@ -96,13 +96,15 @@ jobs:
             pr_json=$(gh pr view "$pr" --json title,author)
             title=$(echo "$pr_json" | jq -r '.title')
             author=$(echo "$pr_json" | jq -r '.author.login')
+            # Strip "app/" prefix for GitHub Apps so it shows as @github-actions
+            author_display="${author#app/}"
 
             avatar_url=$(echo "$pr_json" | jq -r '.author.avatarUrl // empty')
             [ -z "$avatar_url" ] && avatar_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
             avatar_url="${avatar_url}$([ "$avatar_url" == *\?* ] && echo "&" || echo "?")s=20"
 
             # リリースノート行の追加
-            echo "- <img src=\"${avatar_url}\" width=\"20\" height=\"20\"/> @${author} ${title} (#${pr})" >> "$FILE"
+            echo "- <img src=\"${avatar_url}\" width=\"20\" height=\"20\" style=\"vertical-align:middle;\" /> @${author_display} ${title} (#${pr})" >> "$FILE"
           done
       - name: リリースノートの作成
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
