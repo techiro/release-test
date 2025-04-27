@@ -1,0 +1,144 @@
+name: Create Release PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        type: choice
+        required: true
+        default: 'minor'
+        description: 'バージョンアップのタイプを選択してください'
+        options:
+          - 'minor'
+          - 'major'
+          - 'patch'
+      custom_version:
+        type: string
+        required: false
+        description: 'カスタムバージョンを指定する場合は入力してください (例: 1.2.3)'
+      build_number:
+        type: string
+        required: false
+        description: 'ビルド番号を指定してください。指定がなければ、最新のビルド番号に100を加えたものが使用されます'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: 最新のリリースタグを取得
+        id: get-latest-tag
+        run: |
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "0.0.0-0")
+          echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+
+      - name: 現在のバージョンを取得
+        id: get-current-version
+        run: |
+          current_version=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:\s+//')
+          echo "version=$current_version" >> $GITHUB_OUTPUT
+          
+          # Extract build number
+          current_build_number=$(echo "$current_version" | sed -e 's/.*-//')
+          echo "current_build_number=$current_build_number" >> $GITHUB_OUTPUT
+
+      - name: Dartをセットアップする
+        uses: ./.github/actions/setup-dart
+
+      - name: バージョンをバンプする
+        id: bump-version
+        run: |
+          dart pub global activate cider
+          
+          # Calculate new build number
+          build_number="${{ github.event.inputs.build_number }}"
+          if [ -z "$build_number" ]; then
+            build_number=$(( ${{ steps.get-current-version.outputs.current_build_number }} + 100 ))
+            echo "ビルド番号が指定されていません。計算されたビルド番号を使用します: $build_number"
+          fi
+          
+          # Convert version format for cider (- to +)
+          sed -i -E 's/version: ([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)/version: \1+\2/' pubspec.yaml
+          
+          # Handle custom version if provided
+          if [ -n "${{ github.event.inputs.custom_version }}" ]; then
+            cider version "${{ github.event.inputs.custom_version }}+$build_number"
+          else
+            # Otherwise bump according to version_type
+            cider bump ${{ github.event.inputs.version_type }} --build=$build_number
+          fi
+          
+          # Convert version format back (+ to -)
+          sed -i -E 's/version: ([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)/version: \1-\2/' pubspec.yaml
+          
+          # Get the new version
+          new_version=$(cider version)
+          version_without_build=$(echo "$new_version" | sed -e 's/-.*$//')
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "version_without_build=$version_without_build" >> $GITHUB_OUTPUT
+          echo "build_number=$build_number" >> $GITHUB_OUTPUT
+
+      - name: リリースブランチを作成
+        id: create-release-branch
+        run: |
+          branch_name="release-${{ steps.bump-version.outputs.version_without_build }}"
+          
+          # Check if branch already exists
+          existing_branch=$(git ls-remote --heads origin "$branch_name")
+          if [ -n "$existing_branch" ]; then
+            echo "$branch_name が存在していたので削除します。"
+            git push origin --delete "$branch_name"
+          fi
+          
+          echo "Creating branch: $branch_name"
+          git checkout -b "$branch_name"
+          git push --set-upstream origin "$branch_name"
+          echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add pubspec.yaml pubspec.lock
+          git status
+
+      - name: コミットとプッシュ
+        run: |
+          git commit -m "Bump version to ${{ steps.bump-version.outputs.new_version }}" || echo "No changes to commit"
+          git push --set-upstream origin ${{ steps.create-release-branch.outputs.branch_name }}
+
+      - name: リリースノートの内容を取得
+        id: get-release-notes
+        run: |
+          if [ -f "release-note-body.md" ]; then
+            echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+            cat release-note-body.md >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "release_notes=## What's Changed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create PR body with release notes
+          echo "# Release ${{ steps.bump-version.outputs.version_without_build }}" > pr_body.md
+          echo "" >> pr_body.md
+          echo "${{ steps.get-release-notes.outputs.release_notes }}" >> pr_body.md
+          
+          gh pr create \
+            --base main \
+            --head ${{ steps.create-release-branch.outputs.branch_name }} \
+            --label "release" \
+            --title "Release ${{ steps.bump-version.outputs.version_without_build }}" \
+            --body-file pr_body.md
