@@ -89,22 +89,39 @@ jobs:
           echo "" >> "$FILE"
           echo "### What's Changed" >> "$FILE"
 
-          # Collect merged PR numbers between previous and latest tag
-          pr_numbers=$(git log --pretty=format:%s ${PREVIOUS_TAG}..${LATEST_TAG} | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+          declare -A author_avatar
+          declare -A author_lines
+          declare -A author_seen
+          authors_in_order=()
 
           for pr in $pr_numbers; do
             pr_json=$(gh pr view "$pr" --json title,author)
             title=$(echo "$pr_json" | jq -r '.title')
             author=$(echo "$pr_json" | jq -r '.author.login')
-            # Strip "app/" prefix for GitHub Apps so it shows as @github-actions
+            # Strip "app/" prefix for GitHub Apps so it shows as github-actions
             author_display="${author#app/}"
 
             avatar_url=$(echo "$pr_json" | jq -r '.author.avatarUrl // empty')
             [ -z "$avatar_url" ] && avatar_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
             avatar_url="${avatar_url}$([ "$avatar_url" == *\?* ] && echo "&" || echo "?")s=20"
 
-            # リリースノート行の追加
-            echo "- <img src=\"${avatar_url}\" width=\"20\" height=\"20\" style=\"vertical-align:middle;\" /> @${author_display} ${title} (#${pr})" >> "$FILE"
+            # Accumulate bullet lines per author
+            author_avatar[$author_display]="$avatar_url"
+            author_lines[$author_display]="${author_lines[$author_display]}- ${title} (#${pr})"$'\n'
+
+            if [[ -z "${author_seen[$author_display]}" ]]; then
+              authors_in_order+=("$author_display")
+              author_seen[$author_display]=1
+            fi
+          done
+
+          # Output grouped release‑note sections
+          for author_display in "${authors_in_order[@]}"; do
+            avatar_url="${author_avatar[$author_display]}"
+            echo "### <img width=\"20\" height=\"20\" alt=\"${author_display}\" src=\"${avatar_url}\" /> ${author_display}" >> "$FILE"
+            # Print the collected PR lines for this author
+            printf "%s" "${author_lines[$author_display]}" >> "$FILE"
+            echo "" >> "$FILE"
           done
       - name: リリースノートの作成
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
