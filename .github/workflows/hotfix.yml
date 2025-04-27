@@ -84,7 +84,7 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add pubspec.yaml pubspec.lock
+          git add pubspec.yaml
           git status
 
       - name: コミットとプッシュ
