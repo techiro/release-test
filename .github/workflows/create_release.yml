@@ -119,6 +119,5 @@ jobs:
           gh pr create \
             --base main \
             --head ${{ steps.create-release-branch.outputs.branch_name }} \
-            --label "release" \
-            --title "Release ${{ steps.bump-version.outputs.version_without_build }}" \
+            --title "release: bump app version to ${{ steps.bump-version.outputs.version_without_build }}" \
             --body-file "./pr-body/release-pr-body.md"
