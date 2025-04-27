@@ -84,7 +84,7 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add pubspec.yaml pubspec.lock
+          git add pubspec.yaml
           git status
 
       - name: コミットとプッシュ
@@ -102,4 +102,4 @@ jobs:
             --head ${{ steps.create-hotfix.outputs.branch_name }} \
             --label "A-build" \
             --title "release: Hotfix ${{ steps.bump-version.outputs.pubspec_version}}" \
-            --body-file "./.github/hotfix-pr-body.md"
+            --body-file "./pr-body/hotfix-pr-body.md"
