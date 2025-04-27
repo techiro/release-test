@@ -61,7 +61,7 @@ jobs:
                 repo: context.repo.repo,
                 tag: tag
               });
-              
+
               // リリースが存在する場合は削除
               if (releaseResponse && releaseResponse.data) {
                 console.log(`既存のリリース (ID: ${releaseResponse.data.id}) を削除します`);
@@ -78,11 +78,31 @@ jobs:
               console.log('新しいリリースを作成します');
             }
 
+      - name: Generate custom release note
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LATEST_TAG: ${{ steps.get-tags.outputs.latest_tag }}
+          PREVIOUS_TAG: ${{ steps.get-tags.outputs.previous_tag }}
+        run: |
+          FILE="release-note-${LATEST_TAG}.md"
+          echo "## ${LATEST_TAG} — $(date '+%Y-%m-%d')" > "$FILE"
+          echo "" >> "$FILE"
+          echo "### What's Changed" >> "$FILE"
+
+          # Collect merged PR numbers between previous and latest tag
+          pr_numbers=$(git log --pretty=format:%s ${PREVIOUS_TAG}..${LATEST_TAG} | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+
+          for pr in $pr_numbers; do
+            pr_json=$(gh pr view "$pr" --json title,author)
+            title=$(echo "$pr_json" | jq -r '.title')
+            author=$(echo "$pr_json" | jq -r '.author.login')
+            echo "- ![@${author}](https://github.com/${author}.png?size=20) ${title} (#${pr})" >> "$FILE"
+          done
       - name: リリースノートの作成
         uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.get-tags.outputs.latest_tag }}
           makeLatest: true
-          generateReleaseNotes: true
-
+          bodyFile: release-note-${{ steps.get-tags.outputs.latest_tag }}.md
+          generateReleaseNotes: false
