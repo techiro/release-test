@@ -1,0 +1,27 @@
+name: Check Date Format
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  check-date:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Display current date
+        run: |
+          echo "今日の日付: $(date '+%Y-%m-%d')"
+
+      - name: Display date in different formats
+        run: |
+          echo "年-月-日: $(date '+%Y-%m-%d')"
+          echo "年月日: $(date '+%Y%m%d')"
+          echo "月/日/年: $(date '+%m/%d/%Y')"
+          echo "日/月/年: $(date '+%d/%m/%Y')"
+          echo "年-月-日 時:分:秒: $(date '+%Y-%m-%d %H:%M:%S')"

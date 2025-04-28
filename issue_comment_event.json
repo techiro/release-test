@@ -1,18 +1,18 @@
 {
   "action": "created",
   "issue": {
-    "number": 42,
+    "number": 1,
     "pull_request": {
-      "url": "https://api.github.com/repos/owner/repo/pulls/42"
+      "url": "https://api.github.com/repos/techiro/release-test/pulls/1"
     }
   },
   "comment": {
     "body": "/hotfix This is a hotfix test"
   },
   "repository": {
-    "full_name": "owner/repo"
+    "full_name": "techiro/release-test"
   },
   "sender": {
-    "login": "username"
+    "login": "techiro"
   }
 }

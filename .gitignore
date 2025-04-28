@@ -4,3 +4,7 @@
 # Dart
 .dart_tool/
 devtools_options.yaml
+
+# .env
+.env
+.env.var
