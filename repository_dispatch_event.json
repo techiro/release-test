@@ -1,0 +1,9 @@
+{
+  "event_type": "server-update",
+  "client_payload": {
+    "ref": "main",
+    "repository": "techiro/release-test-server",
+    "sha": "example-commit-sha",
+    "message": "Update from server repository"
+  }
+}

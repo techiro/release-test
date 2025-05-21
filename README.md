@@ -7,6 +7,84 @@ Last updated: 2025-05-21
 - CI/CD pipeline integration
 - Release note generation
 - GitHub Actions workflow examples
+- Repository integration via repository_dispatch
+
+## Inter-Repository Integration
+
+### Triggering workflow from release-test-server
+
+This repository can be updated automatically when changes are made in the [release-test-server](https://github.com/techiro/release-test-server/) repository. The integration uses GitHub's `repository_dispatch` event and can be triggered using the following methods:
+
+#### Required Repository Secret
+
+The workflow requires a `REPO_ACCESS_TOKEN` secret to be configured in the repository settings. This token needs to have permissions to access both repositories:
+
+1. Go to GitHub Settings → Developer settings → Personal access tokens
+2. Create a new token with `repo` scope
+3. Add the token as a repository secret in this repository with the name `REPO_ACCESS_TOKEN`
+
+#### Using GitHub CLI
+
+```bash
+gh api repos/techiro/release-test/dispatches \
+  -X POST \
+  -H "Accept: application/vnd.github.v3+json" \
+  -f event_type=server-update \
+  -f client_payload='{
+    "ref": "main",
+    "repository": "techiro/release-test-server",
+    "sha": "commit-sha-here",
+    "message": "Update from server repository"
+  }'
+```
+
+#### Using curl
+
+```bash
+curl -X POST \
+  -H "Accept: application/vnd.github.v3+json" \
+  -H "Authorization: token GITHUB_TOKEN" \
+  https://api.github.com/repos/techiro/release-test/dispatches \
+  -d '{
+    "event_type": "server-update",
+    "client_payload": {
+      "ref": "main",
+      "repository": "techiro/release-test-server",
+      "sha": "commit-sha-here",
+      "message": "Update from server repository"
+    }
+  }'
+```
+
+#### From GitHub Actions in release-test-server
+
+```yaml
+name: Trigger release-test update
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  trigger-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger repository_dispatch event
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.REPO_ACCESS_TOKEN }}" \
+            https://api.github.com/repos/techiro/release-test/dispatches \
+            -d '{
+              "event_type": "server-update",
+              "client_payload": {
+                "ref": "${{ github.ref_name }}",
+                "repository": "${{ github.repository }}",
+                "sha": "${{ github.sha }}",
+                "message": "Update from ${{ github.repository }} (${{ github.sha }})"
+              }
+            }'
+```
 
 ## Debugging
 
@@ -30,6 +108,7 @@ brew install act
 2. プルリクエストイベント：`act pull_request`
 3. 手動トリガー（workflow_dispatch）：`act workflow_dispatch`
 4. スケジュールイベント：`act schedule`
+5. リポジトリディスパッチイベント：`act repository_dispatch -e repository_dispatch_event.json`
 
 #### event.jsonを使ったイベントデータの指定
 
@@ -37,7 +116,8 @@ brew install act
 
 1. 標準の`event.json`を使用する場合：`act workflow_dispatch -e event.json`
 2. カスタムイベントファイルを使用する場合：`act issue_comment -e issue_comment_event.json`
-3. 特定のジョブのみを実行する場合：`act workflow_dispatch -e event.json -j JOB_NAME` (例: `act issue_comment -e issue_comment_event.json -j deploy-command`)
+3. リポジトリディスパッチイベントの場合：`act repository_dispatch -e repository_dispatch_event.json`
+4. 特定のジョブのみを実行する場合：`act workflow_dispatch -e event.json -j JOB_NAME` (例: `act issue_comment -e issue_comment_event.json -j deploy-command`)
 
 #### 秘密情報と環境変数の設定
 
