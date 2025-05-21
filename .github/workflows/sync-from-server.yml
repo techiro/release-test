@@ -1,0 +1,51 @@
+name: Sync Changes from Server Repository
+
+on:
+  repository_dispatch:
+    types: [server-update]
+
+jobs:
+  sync-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Set up Git
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      
+      - name: Clone server repository
+        run: |
+          echo "Cloning release-test-server repository"
+          git clone https://github.com/techiro/release-test-server.git /tmp/release-test-server
+          
+      - name: Copy changes from server repository
+        run: |
+          echo "Copying changes from server repository"
+          # Define the files/directories you want to sync
+          # Example: cp -r /tmp/release-test-server/src/* ./src/
+          # This will depend on the specific files you want to sync
+          
+          # For demonstration, we'll copy a specific file if it exists
+          if [ -f "/tmp/release-test-server/changes.md" ]; then
+            cp /tmp/release-test-server/changes.md ./changes.md
+          fi
+          
+      - name: Commit and push changes
+        run: |
+          echo "Checking for changes to commit"
+          if git diff --exit-code; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          echo "Committing changes"
+          git add .
+          git commit -m "Sync changes from release-test-server [skip ci]"
+          
+          echo "Pushing changes"
+          git push

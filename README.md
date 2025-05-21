@@ -5,6 +5,7 @@
 - CI/CD pipeline integration
 - Release note generation
 - GitHub Actions workflow examples
+- Repository integration via repository_dispatch
 
 ## Debugging
 
@@ -28,6 +29,7 @@ brew install act
 2. プルリクエストイベント：`act pull_request`
 3. 手動トリガー（workflow_dispatch）：`act workflow_dispatch`
 4. スケジュールイベント：`act schedule`
+5. リポジトリディスパッチイベント：`act repository_dispatch -e repository_dispatch_event.json`
 
 #### event.jsonを使ったイベントデータの指定
 
@@ -35,7 +37,8 @@ brew install act
 
 1. 標準の`event.json`を使用する場合：`act workflow_dispatch -e event.json`
 2. カスタムイベントファイルを使用する場合：`act issue_comment -e issue_comment_event.json`
-3. 特定のジョブのみを実行する場合：`act workflow_dispatch -e event.json -j JOB_NAME` (例: `act issue_comment -e issue_comment_event.json -j deploy-command`)
+3. リポジトリディスパッチイベントの場合：`act repository_dispatch -e repository_dispatch_event.json`
+4. 特定のジョブのみを実行する場合：`act workflow_dispatch -e event.json -j JOB_NAME` (例: `act issue_comment -e issue_comment_event.json -j deploy-command`)
 
 #### 秘密情報と環境変数の設定
 
