@@ -1,5 +1,7 @@
 # Project Documentation
 
+Last updated: 2025-05-21
+
 ## Features
 - Automated version management
 - CI/CD pipeline integration
