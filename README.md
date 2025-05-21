@@ -7,6 +7,75 @@
 - GitHub Actions workflow examples
 - Repository integration via repository_dispatch
 
+## Inter-Repository Integration
+
+### Triggering workflow from release-test-server
+
+This repository can be updated automatically when changes are made in the [release-test-server](https://github.com/techiro/release-test-server/) repository. The integration uses GitHub's `repository_dispatch` event and can be triggered using the following methods:
+
+#### Using GitHub CLI
+
+```bash
+gh api repos/techiro/release-test/dispatches \
+  -X POST \
+  -H "Accept: application/vnd.github.v3+json" \
+  -f event_type=server-update \
+  -f client_payload='{
+    "ref": "main",
+    "repository": "techiro/release-test-server",
+    "sha": "commit-sha-here",
+    "message": "Update from server repository"
+  }'
+```
+
+#### Using curl
+
+```bash
+curl -X POST \
+  -H "Accept: application/vnd.github.v3+json" \
+  -H "Authorization: token GITHUB_TOKEN" \
+  https://api.github.com/repos/techiro/release-test/dispatches \
+  -d '{
+    "event_type": "server-update",
+    "client_payload": {
+      "ref": "main",
+      "repository": "techiro/release-test-server",
+      "sha": "commit-sha-here",
+      "message": "Update from server repository"
+    }
+  }'
+```
+
+#### From GitHub Actions in release-test-server
+
+```yaml
+name: Trigger release-test update
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  trigger-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger repository_dispatch event
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.REPO_ACCESS_TOKEN }}" \
+            https://api.github.com/repos/techiro/release-test/dispatches \
+            -d '{
+              "event_type": "server-update",
+              "client_payload": {
+                "ref": "${{ github.ref_name }}",
+                "repository": "${{ github.repository }}",
+                "sha": "${{ github.sha }}",
+                "message": "Update from ${{ github.repository }} (${{ github.sha }})"
+              }
+            }'
+```
+
 ## Debugging
 
 ### actコマンドを使用したワークフローのローカル実行
