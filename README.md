@@ -13,6 +13,14 @@
 
 This repository can be updated automatically when changes are made in the [release-test-server](https://github.com/techiro/release-test-server/) repository. The integration uses GitHub's `repository_dispatch` event and can be triggered using the following methods:
 
+#### Required Repository Secret
+
+The workflow requires a `REPO_ACCESS_TOKEN` secret to be configured in the repository settings. This token needs to have permissions to access both repositories:
+
+1. Go to GitHub Settings → Developer settings → Personal access tokens
+2. Create a new token with `repo` scope
+3. Add the token as a repository secret in this repository with the name `REPO_ACCESS_TOKEN`
+
 #### Using GitHub CLI
 
 ```bash
