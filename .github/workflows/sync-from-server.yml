@@ -25,28 +25,24 @@ jobs:
           echo "Commit SHA: ${{ github.event.client_payload.sha || 'N/A' }}"
           echo "Message: ${{ github.event.client_payload.message || 'No message provided' }}"
       
-      - name: Clone server repository
-        run: |
-          echo "Cloning release-test-server repository"
-          git clone https://github.com/techiro/release-test-server.git /tmp/release-test-server
-          
-          # If a specific ref is provided, checkout that ref
-          if [ -n "${{ github.event.client_payload.ref }}" ]; then
-            cd /tmp/release-test-server
-            git checkout ${{ github.event.client_payload.ref }}
-            cd -
-          fi
+      - name: Checkout server repository
+        uses: actions/checkout@v4.2.2
+        with:
+          repository: techiro/release-test-server
+          ref: ${{ github.event.client_payload.ref || 'main' }}
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          path: server
           
       - name: Copy changes from server repository
         run: |
           echo "Copying changes from server repository"
           # Define the files/directories you want to sync
-          # Example: cp -r /tmp/release-test-server/src/* ./src/
+          # Example: cp -r ./server/src/* ./src/
           # This will depend on the specific files you want to sync
           
           # For demonstration, we'll copy a specific file if it exists
-          if [ -f "/tmp/release-test-server/changes.md" ]; then
-            cp /tmp/release-test-server/changes.md ./changes.md
+          if [ -f "./server/changes.md" ]; then
+            cp ./server/changes.md ./changes.md
           fi
           
       - name: Commit and push changes
