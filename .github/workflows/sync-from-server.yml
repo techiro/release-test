@@ -2,7 +2,7 @@ name: Sync Changes from Server Repository
 
 on:
   repository_dispatch:
-    types: [server-release-updated]
+    types: [server-update]
 
 jobs:
   sync-changes:
