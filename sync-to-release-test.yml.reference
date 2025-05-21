@@ -1,0 +1,20 @@
+name: Sync to Release Test Repository
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'release-server.md'
+
+jobs:
+  notify-release-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger repository_dispatch event
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: techiro/release-test
+          event-type: server-update
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
