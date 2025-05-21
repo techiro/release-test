@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "Copying changes from server repository"
           if [ -f "./server/changes.md" ]; then
-            cp ./server/changes.md ./changes.md
+            cp -f ./server/changes.md ./changes.md
           fi
 
       - name: Commit and push changes
