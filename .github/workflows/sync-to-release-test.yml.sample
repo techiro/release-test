@@ -1,0 +1,44 @@
+name: Sync Changes to release-test Repository
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'release-server.md'
+      - 'changes.md'
+
+jobs:
+  sync-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      
+      - name: Get commit SHA
+        id: get-sha
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.RELEASE_INTEGRATION_APP_ID }}
+          private-key: ${{ secrets.RELEASE_INTEGRATION_APP_PRIVATE_KEY }}
+      
+      - name: Trigger repository_dispatch event
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          repository: techiro/release-test
+          event-type: server-release-updated
+          client-payload: |
+            {
+              "ref": "${{ github.ref_name }}",
+              "repository": "${{ github.repository }}",
+              "sha": "${{ steps.get-sha.outputs.sha }}",
+              "message": "Update from ${{ github.repository }} (${{ steps.get-sha.outputs.sha }})"
+            }

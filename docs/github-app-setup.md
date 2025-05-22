@@ -25,6 +25,8 @@ This guide explains how to create and configure a GitHub App that can be used fo
 2. Scroll down to the **Private keys** section
 3. Click on **Generate a private key**
 4. Save the downloaded .pem file securely
+5. **Do not modify the format of the private key** - keep all line breaks and formatting intact
+   - See [GitHub App Private Key Format Guide](./github-app-private-key-format.md) for detailed instructions
 
 ## Installing the GitHub App
 
@@ -40,10 +42,13 @@ This guide explains how to create and configure a GitHub App that can be used fo
 2. Add the following repository secret:
    - **Name**: `RELEASE_INTEGRATION_APP_PRIVATE_KEY`
    - **Value**: Paste the entire contents of the private key .pem file, including the `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----` lines
+   - **Important**: Make sure to keep all line breaks intact. Copy the key directly from the .pem file without any modifications.
 
 3. Then go to the **Variables** tab and add:
    - **Name**: `RELEASE_INTEGRATION_APP_ID`
    - **Value**: Your GitHub App ID (visible on the app's settings page)
+
+4. Repeat steps 1-3 for the `techiro/release-test-server` repository as well, using the same values.
 
 ## Testing the Integration
 
@@ -61,3 +66,7 @@ If you encounter issues:
 2. Verify the App is installed on both repositories
 3. Check that the private key and App ID are correctly configured in repository secrets/variables
 4. Review the workflow run logs for any authentication or permission errors
+5. If you see `DECODER routines::unsupported` errors:
+   - Your private key is likely not formatted correctly
+   - Refer to [GitHub App Private Key Format Guide](./github-app-private-key-format.md) for detailed instructions
+   - Re-generate and re-configure the private key if necessary
