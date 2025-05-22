@@ -46,6 +46,21 @@ jobs:
           fi
 
 
+      - name: Copy release-server.md from server repository
+        run: |
+          echo "Copying release-server.md from server repository"
+          if [ -f "./server/release-server.md" ]; then
+            cp -f ./server/release-server.md ./release-server.md
+            echo "Copied release-server.md file from server to source repository"
+          else
+            echo "No release-server.md file found in server repository"
+          fi
+
+      - name: Remove server folder
+        run: |
+          echo "Removing ./server folder"
+          rm -rf ./server
+
       - name: Close pull request if already exists
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
