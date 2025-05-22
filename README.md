@@ -22,8 +22,8 @@ The workflow now uses a GitHub App for cross-repository operations. This approac
 1. Create a GitHub App with appropriate permissions for both repositories
 2. Generate a private key for the app
 3. Configure the repository with:
-   - Repository secret: `GITHUB_APP_PRIVATE_KEY` - The app's private key
-   - Repository variable: `GITHUB_APP_ID` - The app's ID
+   - Repository secret: `RELEASE_INTEGRATION_APP_PRIVATE_KEY` - The app's private key
+   - Repository variable: `RELEASE_INTEGRATION_APP_ID` - The app's ID
 
 For detailed setup instructions, see [GitHub App Setup Guide](docs/github-app-setup.md).
 
@@ -131,10 +131,10 @@ actでは`.actrc`ファイルと`.env`ファイルを使用して秘密情報や
    ```bash
    # トークンを直接設定
    GITHUB_TOKEN=ghp_your_token_here
-   GITHUB_APP_ID=your_app_id_here
+   RELEASE_INTEGRATION_APP_ID=your_app_id_here
 
    # 複数行の秘密鍵を設定
-   GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
+   RELEASE_INTEGRATION_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
    MII...
    ...
    -----END RSA PRIVATE KEY-----"

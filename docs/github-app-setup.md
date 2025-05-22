@@ -37,12 +37,12 @@ This guide explains how to create and configure a GitHub App that can be used fo
 ## Configuring Repository Secrets and Variables
 
 1. In your `techiro/release-test` repository, go to **Settings** > **Secrets and variables** > **Actions**
-2. Add the following repository secrets:
-   - **Name**: `GITHUB_APP_PRIVATE_KEY`
+2. Add the following repository secret:
+   - **Name**: `RELEASE_INTEGRATION_APP_PRIVATE_KEY`
    - **Value**: Paste the entire contents of the private key .pem file, including the `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----` lines
 
 3. Then go to the **Variables** tab and add:
-   - **Name**: `GITHUB_APP_ID`
+   - **Name**: `RELEASE_INTEGRATION_APP_ID`
    - **Value**: Your GitHub App ID (visible on the app's settings page)
 
 ## Testing the Integration
