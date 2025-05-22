@@ -42,6 +42,10 @@ jobs:
 
       - name: Commit and push changes
         run: |
+          # 一時ブランチを作成
+          BRANCH_NAME="sync-release-from-server"
+          git checkout -b "$BRANCH_NAME"
+
           echo "Checking for changes to commit"
           git add .
           if [ -z "$(git status --porcelain)" ]; then
@@ -56,7 +60,7 @@ jobs:
           git commit -m "$COMMIT_MSG"
 
           echo "Pushing changes"
-          git push
+          git push origin "$BRANCH_NAME"
 
       - name: Create Pull Request
         env:
@@ -64,6 +68,7 @@ jobs:
         run: |
           echo "Creating Pull Request"
           gh pr create \
+            -H sync-release-from-server \
             -B main \
             -t 'chore: Update API type definitions' \
             -b 'API type updated! Exciting updates included.'
