@@ -12,7 +12,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
-          path: source
 
       - name: Set up Git
         run: |
@@ -37,11 +36,10 @@ jobs:
 
 
       - name: Copy changes from server repository
-        working-directory: server
         run: |
           echo "Copying changes from server repository"
-            if [ -f "./changes.md" ]; then
-            cp -f ./changes.md ../source/changes.md
+            if [ -f "./server/changes.md" ]; then
+            cp -f ./server/changes.md ./changes.md
             echo "Copied changes.md file from server to source repository"
             else
             echo "No changes.md file found in server repository"
