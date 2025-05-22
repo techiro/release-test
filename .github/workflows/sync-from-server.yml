@@ -45,7 +45,6 @@ jobs:
             echo "No changes.md file found in server repository"
           fi
 
-
       - name: Copy release-server.md from server repository
         run: |
           echo "Copying release-server.md from server repository"
