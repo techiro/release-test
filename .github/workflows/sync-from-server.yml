@@ -24,13 +24,14 @@ jobs:
           echo "Ref: ${{ github.event.client_payload.ref || 'main' }}"
           echo "Commit SHA: ${{ github.event.client_payload.sha || 'N/A' }}"
           echo "Message: ${{ github.event.client_payload.message || 'No message provided' }}"
-          
+
       - name: Generate GitHub App Token
         id: generate_token
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ vars.RELEASE_INTEGRATION_APP_ID }}
           private-key: ${{ secrets.RELEASE_INTEGRATION_APP_PRIVATE_KEY }}
+          owner: techiro
 
       - name: Checkout server repository
         uses: actions/checkout@v3
