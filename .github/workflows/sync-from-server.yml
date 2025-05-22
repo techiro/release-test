@@ -11,7 +11,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          path: source
 
       - name: Set up Git
         run: |
@@ -20,7 +21,7 @@ jobs:
 
       - name: Print event information
         run: |
-          echo "Event received from: ${{ github.event.client_payload.repository || 'techiro/release-test-server' }}"
+          echo "Event received from: ${{ github.event.client_payload.repository || 'N/A' }}"
           echo "Ref: ${{ github.event.client_payload.ref || 'main' }}"
           echo "Commit SHA: ${{ github.event.client_payload.sha || 'N/A' }}"
           echo "Message: ${{ github.event.client_payload.message || 'No message provided' }}"
@@ -33,20 +34,44 @@ jobs:
           token: ${{ secrets.RELEASE_TEST_SERVER_TOKEN }}
           path: server
 
+
+
       - name: Copy changes from server repository
+        working-directory: server
         run: |
           echo "Copying changes from server repository"
-          if [ -f "./server/changes.md" ]; then
-            cp -f ./server/changes.md ./changes.md
+            if [ -f "./changes.md" ]; then
+            cp -f ./changes.md ../source/changes.md
+            echo "Copied changes.md file from server to source repository"
+            else
+            echo "No changes.md file found in server repository"
+          fi
+
+
+      - name: Close pull request if already exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Closing existing pull request if it exists"
+          PR_NUMBER=$(gh pr list --state open --json number,title,headRefName --jq '.[] | select(.headRefName == "sync-release-from-server") | .number')
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Closing pull request #$PR_NUMBER"
+            gh pr close "$PR_NUMBER" --delete-branch
+          else
+            echo "No open pull request found for branch sync-release-from-server"
           fi
 
       - name: Commit and push changes
         run: |
-          # 一時ブランチを作成
           BRANCH_NAME="sync-release-from-server"
-          git checkout -b "$BRANCH_NAME"
 
-          echo "Checking for changes to commit"
+          # Check if branch already exists
+          existing_branch=$(git ls-remote --heads origin "$BRANCH_NAME")
+          if [ -n "$existing_branch" ]; then
+            echo "$BRANCH_NAME が存在していたので削除します。"
+            git push origin --delete "$BRANCH_NAME"
+          fi
+          git checkout -b "$BRANCH_NAME"
           git add .
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes to commit"
@@ -54,7 +79,7 @@ jobs:
           fi
 
           # Get commit message from event payload or use default
-          COMMIT_MSG="${{ github.event.client_payload.message || 'Sync changes from release-test-server' }} [skip ci]"
+          COMMIT_MSG="${{ github.event.client_payload.message || 'Sync changes from release-test-server' }}"
 
           echo "Committing changes"
           git commit -m "$COMMIT_MSG"
