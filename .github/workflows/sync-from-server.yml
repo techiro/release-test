@@ -24,13 +24,20 @@ jobs:
           echo "Ref: ${{ github.event.client_payload.ref || 'main' }}"
           echo "Commit SHA: ${{ github.event.client_payload.sha || 'N/A' }}"
           echo "Message: ${{ github.event.client_payload.message || 'No message provided' }}"
+          
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.RELEASE_INTEGRATION_APP_ID }}
+          private-key: ${{ secrets.RELEASE_INTEGRATION_APP_PRIVATE_KEY }}
 
       - name: Checkout server repository
         uses: actions/checkout@v3
         with:
           repository: techiro/release-test-server
           ref: ${{ github.event.client_payload.ref || 'main' }}
-          token: ${{ secrets.RELEASE_TEST_SERVER_TOKEN }}
+          token: ${{ steps.generate_token.outputs.token }}
           path: server
 
 
@@ -62,7 +69,7 @@ jobs:
 
       - name: Close pull request if already exists
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
           echo "Closing existing pull request if it exists"
           PR_NUMBER=$(gh pr list --state open --json number,title,headRefName --jq '.[] | select(.headRefName == "sync-release-from-server") | .number')
@@ -74,6 +81,8 @@ jobs:
           fi
 
       - name: Commit and push changes
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
           BRANCH_NAME="sync-release-from-server"
 
@@ -101,7 +110,7 @@ jobs:
 
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
           echo "Creating Pull Request"
           gh pr create \

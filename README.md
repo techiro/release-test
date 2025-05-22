@@ -15,13 +15,17 @@ Last updated: 2025-05-21
 
 This repository can be updated automatically when changes are made in the [release-test-server](https://github.com/techiro/release-test-server/) repository. The integration uses GitHub's `repository_dispatch` event and can be triggered using the following methods:
 
-#### Required Repository Secret
+#### Required GitHub App Configuration
 
-The workflow requires a `REPO_ACCESS_TOKEN` secret to be configured in the repository settings. This token needs to have permissions to access both repositories:
+The workflow now uses a GitHub App for cross-repository operations. This approach is more secure and maintainable than using personal access tokens:
 
-1. Go to GitHub Settings → Developer settings → Personal access tokens
-2. Create a new token with `repo` scope
-3. Add the token as a repository secret in this repository with the name `REPO_ACCESS_TOKEN`
+1. Create a GitHub App with appropriate permissions for both repositories
+2. Generate a private key for the app
+3. Configure the repository with:
+   - Repository secret: `RELEASE_INTEGRATION_APP_PRIVATE_KEY` - The app's private key
+   - Repository variable: `RELEASE_INTEGRATION_APP_ID` - The app's ID
+
+For detailed setup instructions, see [GitHub App Setup Guide](docs/github-app-setup.md).
 
 #### Using GitHub CLI
 
@@ -127,10 +131,10 @@ actでは`.actrc`ファイルと`.env`ファイルを使用して秘密情報や
    ```bash
    # トークンを直接設定
    GITHUB_TOKEN=ghp_your_token_here
-   GITHUB_APP_ID=your_app_id_here
+   RELEASE_INTEGRATION_APP_ID=your_app_id_here
 
    # 複数行の秘密鍵を設定
-   GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
+   RELEASE_INTEGRATION_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
    MII...
    ...
    -----END RSA PRIVATE KEY-----"
