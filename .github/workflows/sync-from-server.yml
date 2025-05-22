@@ -59,6 +59,8 @@ jobs:
           git push
 
       - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "Creating Pull Request"
           gh pr create \
