@@ -21,11 +21,7 @@ jobs:
   call-openhands-resolver:
     uses: All-Hands-AI/OpenHands/.github/workflows/openhands-resolver.yml@main
     with:
-      macro: ${{ vars.OPENHANDS_MACRO || '@openhands-agent' }}
-      max_iterations: ${{ fromJson(vars.OPENHANDS_MAX_ITER || 50) }}
-      base_container_image: ${{ vars.OPENHANDS_BASE_CONTAINER_IMAGE || '' }}
-      LLM_MODEL: ${{ vars.LLM_MODEL || 'anthropic/claude-3-5-sonnet-20241022' }}
-      target_branch: ${{ vars.TARGET_BRANCH || 'main' }}
+      LLM_MODEL: ${{ vars.LLM_MODEL || 'anthropic/claude-sonnet-4-20250514' }}
     secrets:
       PAT_TOKEN: ${{ secrets.RELEASE_TEST_PAT_TOKEN }}
       PAT_USERNAME: ${{ secrets.RELEASE_TEST_PAT_USERNAME }}
