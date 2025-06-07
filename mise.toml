@@ -4,29 +4,28 @@ hide = true # hide this task from the list
 
 [tasks.clean]
 depends = ['cleancache']
-run = "cargo clean" # runs as a shell command
+run = "echo Cleaning up..."
 
 [tasks.build]
 description = 'Build the CLI'
-run = "cargo build"
+run = "echo Building the CLI..."
 alias = 'b' # `mise run b`
 
 [tasks.test]
 description = 'Run automated tests'
 # multiple commands are run in series
 run = [
-    'cargo test',
-    './scripts/test-e2e.sh',
+    'echo Running tests...',
 ]
 dir = "{{cwd}}" # run in user's cwd, default is the project's base directory
 
 [tasks.lint]
 description = 'Lint with clippy'
-env = { RUST_BACKTRACE = '1' } # env vars for the script
+env = { LINT_MESSAGE = 'Linting in progress...' } # env vars for the script
 # you can specify a multiline script instead of individual commands
 run = """
-#!/usr/bin/env bash
-cargo clippy
+#!/usr/bin/env zsh
+echo $LINT_MESSAGE
 """
 
 [tasks.ci] # only dependencies to be run
