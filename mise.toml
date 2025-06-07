@@ -24,7 +24,7 @@ description = 'Lint with clippy'
 env = { LINT_MESSAGE = 'Linting in progress...' } # env vars for the script
 # you can specify a multiline script instead of individual commands
 run = """
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 echo $LINT_MESSAGE
 """
 
