@@ -1,0 +1,26 @@
+
+name: Flutter CI with mise
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install mise
+      uses: jdx/mise-action@v1
+      with:
+        version: latest
+
+    - name: Setup Flutter with mise
+      run: |
+        mise install flutter@stable
+        mise use -g flutter@stable
+        echo "$HOME/.local/share/mise/shims" >> $GITHUB_PATH
+
+    - name: Verify Flutter
+      run: flutter doctor -v
