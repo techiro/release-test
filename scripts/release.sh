@@ -3,6 +3,19 @@ set -e
 
 # リリーススクリプト
 # このスクリプトはリリース作業を自動化します
+#
+# 機能:
+# - セマンティックバージョン管理 (例: 0.1.0)
+# - ビルド番号の管理 (例: 0.1.0-900)
+# - ビルド番号のカスタムインクリメント (デフォルト: +100)
+# - 変更履歴の自動更新
+# - Gitタグの自動作成
+# - リリースPRの自動作成
+#
+# 使用方法:
+# ./scripts/release.sh
+# または
+# mise run release
 
 # 色の設定
 GREEN="\033[0;32m"
@@ -67,13 +80,41 @@ get_version() {
   if [ -f "pubspec.yaml" ]; then
     current_version=$(grep -E '^version:' pubspec.yaml | sed 's/version: //')
     echo "現在のバージョン: $current_version"
+
+    # 現在のバージョンからベースバージョンとビルド番号を抽出
+    if [[ $current_version =~ ^([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
+      current_base_version="${BASH_REMATCH[1]}"
+      current_build_number="${BASH_REMATCH[2]}"
+      echo "現在のベースバージョン: $current_base_version"
+      echo "現在のビルド番号: $current_build_number"
+    else
+      current_base_version="$current_version"
+      current_build_number="0"
+      echo "ビルド番号が見つかりません。ビルド番号を0とします。"
+    fi
   else
     current_version="0.0.0"
+    current_base_version="0.0.0"
+    current_build_number="0"
     warn "バージョン情報が見つかりませんでした。初期バージョンを $current_version とします。"
   fi
 
-  # 新しいバージョンの入力を求める
-  read -p "新しいバージョン番号を入力してください（例: 1.0.0）: " new_version
+  # 新しいベースバージョンの入力を求める
+  read -p "新しいベースバージョン番号を入力してください（例: 1.0.0）[${current_base_version}]: " new_base_version
+  new_base_version=${new_base_version:-$current_base_version}
+
+  # ビルド番号のインクリメント幅を設定（デフォルトは100）
+  default_increment=100
+  read -p "ビルド番号のインクリメント幅を入力してください [${default_increment}]: " increment_value
+  increment_value=${increment_value:-$default_increment}
+
+  # 新しいビルド番号の計算
+  new_build_number=$((current_build_number + increment_value))
+  read -p "新しいビルド番号を入力してください [${new_build_number}]: " input_build_number
+  new_build_number=${input_build_number:-$new_build_number}
+
+  # 完全なバージョン番号を作成
+  new_version="${new_base_version}-${new_build_number}"
 
   if [ -z "$new_version" ]; then
     error "バージョン番号が指定されていません。"
@@ -131,6 +172,17 @@ update_changelog() {
   fi
 }
 
+# コミットとタグの作成
+commit_and_tag() {
+  echo "変更をコミットして、タグを作成中..."
+
+  git add .
+  git commit -m "chore: バージョン $new_version へ更新"
+  git tag -a "v$new_version" -m "リリース v$new_version"
+
+  info "コミットとタグを作成しました。"
+}
+
 # リリースPRの作成（必要に応じて）
 create_release_pr() {
   echo "リリースプロセスを完了中..."
@@ -165,6 +217,7 @@ main() {
   get_version
   update_version
   update_changelog
+  commit_and_tag
   create_release_pr
 
   info "リリースプロセスが完了しました！"
