@@ -84,26 +84,47 @@ jobs:
           LATEST_TAG: ${{ steps.get-tags.outputs.latest_tag }}
           PREVIOUS_TAG: ${{ steps.get-tags.outputs.previous_tag }}
         run: |
+          set -eo pipefail
+          # Ensure gh CLI picks up the authentication token
+          export GH_TOKEN="${GITHUB_TOKEN}"
+
           FILE="release-note-${LATEST_TAG}.md"
           echo "## ${LATEST_TAG} — $(date '+%Y-%m-%d')" > "$FILE"
           echo "" >> "$FILE"
           echo "### What's Changed" >> "$FILE"
 
-          # Collect merged PR numbers between previous and latest tag
-          pr_numbers=$(git log --pretty=format:%s ${PREVIOUS_TAG}..${LATEST_TAG} | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+          # Determine commit range safely (handles initial release where PREVIOUS_TAG may be empty)
+          if [ -n "${PREVIOUS_TAG}" ]; then
+            commit_range="${PREVIOUS_TAG}..${LATEST_TAG}"
+          else
+            commit_range="${LATEST_TAG}"
+          fi
 
-          for pr in $pr_numbers; do
-            pr_json=$(gh pr view "$pr" --json title,author)
-            title=$(echo "$pr_json" | jq -r '.title')
-            author=$(echo "$pr_json" | jq -r '.author.login')
-            # Strip "app/" prefix for GitHub Apps so it shows as @github-actions
+          # Collect unique, numerically‑sorted PR numbers merged in the range
+          pr_numbers=$(git log --pretty=format:%s ${commit_range} \
+            | grep -oE '#[0-9]+' \
+            | tr -d '#' \
+            | sort -n \
+            | uniq)
+
+          for pr in ${pr_numbers}; do
+            # Query PR details; continue gracefully if the PR is not found or inaccessible
+            if pr_json=$(gh pr view "${pr}" --json title,author 2>/dev/null); then
+              title=$(echo "${pr_json}" | jq -r '.title // "No title"')
+              author=$(echo "${pr_json}" | jq -r '.author.login // "unknown"')
+            else
+              title="No title"
+              author="unknown"
+            fi
+
+            # Normalize GitHub App authors so they display as @github-actions
             author_display="${author#app/}"
 
-            avatar_url=$(echo "$pr_json" | jq -r '.author.avatarUrl // empty')
-            [ -z "$avatar_url" ] && avatar_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-            avatar_url="${avatar_url}$([ "$avatar_url" == *\?* ] && echo "&" || echo "?")s=20"
+            avatar_url=$(echo "${pr_json:-}" | jq -r '.author.avatarUrl // empty')
+            [ -z "${avatar_url}" ] && avatar_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+            avatar_url="${avatar_url}$([ "${avatar_url}" == *\?* ] && echo "&" || echo "?")s=20"
 
-            # リリースノート行の追加
+            # Append line to release note
             echo "- <img src=\"${avatar_url}\" width=\"20\" height=\"20\" style=\"vertical-align:middle;\" /> @${author_display} ${title} (#${pr})" >> "$FILE"
           done
       - name: リリースノートの作成
