@@ -70,7 +70,7 @@ jobs:
 
       - name: Close pull request if already exists
         env:
-          GITHUB_TOK ${{ steps.generate_token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
           echo "Closing existing pull request if it exists"
           PR_NUMBER=$(gh pr list --state open --json number,title,headRefName --jq '.[] | select(.headRefName == "sync-release-from-server") | .number')
