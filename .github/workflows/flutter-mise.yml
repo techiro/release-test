@@ -1,9 +1,11 @@
-
 name: Flutter CI with mise
 
 on:
   push:
     branches: [ main ]
+
+permissions:
+  contents: read
 
 jobs:
   build:

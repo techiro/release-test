@@ -12,6 +12,9 @@ on:
         required: true
         default: 'Automated commit via GitHub Actions'
 
+permissions:
+  contents: write
+
 jobs:
   commit:
     runs-on: ubuntu-latest

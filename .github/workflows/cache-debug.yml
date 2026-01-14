@@ -23,6 +23,9 @@ on:
           - pubspec.yaml
           - .tool-versions
 
+permissions:
+  contents: read
+
 jobs:
   # ジョブ1: 基本的なキャッシュのデモンストレーション
   basic-cache-demo:

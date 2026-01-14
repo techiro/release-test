@@ -3,6 +3,9 @@ name: Download artifact
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   get-results:
     runs-on: ubuntu-latest
