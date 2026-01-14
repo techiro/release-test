@@ -1,8 +1,11 @@
-name: Flutter CI with mise
+name: Flutter CI
 
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,16 +16,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install mise
-      uses: jdx/mise-action@v1
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
       with:
-        version: latest
-
-    - name: Setup Flutter with mise
-      run: |
-        mise install flutter@stable
-        mise use -g flutter@stable
-        echo "$HOME/.local/share/mise/shims" >> $GITHUB_PATH
+        channel: stable
 
     - name: Verify Flutter
       run: flutter doctor -v
