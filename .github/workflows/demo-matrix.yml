@@ -1,5 +1,9 @@
 name: Matrix Build Demo
 on: push
+
+permissions:
+  contents: read
+
 jobs:
   animal_matrix:
     runs-on: ubuntu-latest

@@ -1,5 +1,9 @@
 name: Environment Variables Demo
 on: push
+
+permissions:
+  contents: read
+
 env:
   GLOBAL_VAR: "Hello from workflow"        # ワークフロー全体の環境変数
 jobs:

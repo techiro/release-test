@@ -2,6 +2,9 @@ name: Generate Token
 
 on: [workflow_dispatch]
 
+permissions:
+  contents: read
+
 jobs:
   generate-token:
     runs-on: ubuntu-latest
