@@ -56,7 +56,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: checkout code with full history
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}  # PRの最新コミットを参照
           token: ${{ steps.generate_github_app_token.outputs.token }} # GitHub Appのトークンを使用

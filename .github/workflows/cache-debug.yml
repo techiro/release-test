@@ -32,12 +32,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # ステップ1: 詳細な説明付きのキャッシュデモンストレーション
       - name: Pub依存関係のキャッシュ
         id: cache-pub
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           # キャッシュされるディレクトリのパス
           path: |
@@ -100,12 +100,12 @@ jobs:
     needs: basic-cache-demo
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Step 1: Primary cache for dependencies
       - name: Cache Primary Dependencies
         id: cache-primary
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.primary-cache
           key: primary-${{ runner.os }}-${{ hashFiles(format('{0}', inputs.dependency_file)) }}-${{ inputs.cache_key_suffix }}
@@ -113,7 +113,7 @@ jobs:
       # Step 2: Secondary cache with different key
       - name: Cache Secondary Dependencies
         id: cache-secondary
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.secondary-cache
           # Different hash source to demonstrate independent caching
@@ -191,7 +191,7 @@ jobs:
     needs: advanced-cache-demo
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Step 1: Create a unique cache key based on current time
       - name: Generate Unique Cache Key
@@ -204,7 +204,7 @@ jobs:
       # Step 2: Cache with timestamp-based key
       - name: Cache With Timestamp
         id: cache-timestamp
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.timestamp-cache
           # Using timestamp ensures this is always a cache miss
